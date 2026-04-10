@@ -20,6 +20,7 @@
           <button id="btn-exam" class="btn btn-secondary">考试模式</button>
           <button id="btn-wrongbook" class="btn btn-secondary" disabled>错题本（0题）</button>
           <button id="btn-stats" class="btn btn-secondary">数据看板</button>
+          <button id="btn-flashcard" class="btn btn-secondary">闪卡浏览</button>
         </div>
       </div>
     </section>
@@ -76,6 +77,36 @@
           <button id="btn-stats-home" class="btn btn-secondary">返回首页</button>
         </div>
         <div id="stats-categories" class="stats-categories"></div>
+      </div>
+    </section>
+
+    <section id="view-flashcard" class="view">
+      <header class="quiz-header">
+        <div class="progress-track">
+          <div id="fc-progress-bar" class="progress-fill"></div>
+        </div>
+        <div class="meta-row">
+          <p id="fc-number" class="muted"></p>
+          <p id="fc-category" class="pill"></p>
+          <button id="btn-fc-exit" class="btn-exit" type="button">✕ 退出</button>
+        </div>
+      </header>
+
+      <div class="fc-scene" id="fc-card" role="button" tabindex="0" aria-label="点击翻转卡片">
+        <div class="fc-card-inner">
+          <div class="fc-face fc-front">
+            <p id="fc-question" class="fc-question-text"></p>
+          </div>
+          <div class="fc-face fc-back">
+            <p id="fc-answer" class="fc-answer-text"></p>
+            <p id="fc-explanation" class="fc-explanation-text"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="fc-nav">
+        <button id="btn-fc-prev" class="btn btn-secondary">上一题</button>
+        <button id="btn-fc-next" class="btn btn-primary">下一题</button>
       </div>
     </section>
   </main>
