@@ -88,5 +88,32 @@ const Storage = {
     } catch (e) {
       console.warn('Storage.clear failed:', e);
     }
+  },
+
+  SESSION_KEY: 'zhlj_quiz_session',
+
+  saveSession(sessionData) {
+    try {
+      localStorage.setItem(this.SESSION_KEY, JSON.stringify(sessionData));
+    } catch (e) {
+      console.warn('Storage.saveSession failed:', e);
+    }
+  },
+
+  loadSession() {
+    try {
+      const raw = localStorage.getItem(this.SESSION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  clearSession() {
+    try {
+      localStorage.removeItem(this.SESSION_KEY);
+    } catch (e) {
+      console.warn('Storage.clearSession failed:', e);
+    }
   }
 };
