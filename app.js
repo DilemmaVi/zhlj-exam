@@ -435,7 +435,7 @@ function toggleCategoryDetail(card, category) {
   const existing = card.querySelector('.stat-q-list');
   if (existing) {
     existing.remove();
-    card.querySelector('.stat-collapse-btn').remove();
+    card.querySelector('.stat-collapse-btn')?.remove();
     return;
   }
 
