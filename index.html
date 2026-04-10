@@ -88,11 +88,11 @@
         <div class="meta-row">
           <p id="fc-number" class="muted"></p>
           <p id="fc-category" class="pill"></p>
-          <button id="btn-fc-exit" class="btn-exit" type="button">✕ 退出</button>
+          <button id="btn-fc-exit" class="btn-exit" type="button" aria-label="退出闪卡浏览">✕ 退出</button>
         </div>
       </header>
 
-      <div class="fc-scene" id="fc-card" role="button" tabindex="0" aria-label="点击翻转卡片">
+      <button class="fc-scene" id="fc-card" type="button" aria-label="点击翻转卡片">
         <div class="fc-card-inner">
           <div class="fc-face fc-front">
             <p id="fc-question" class="fc-question-text"></p>
@@ -102,7 +102,7 @@
             <p id="fc-explanation" class="fc-explanation-text"></p>
           </div>
         </div>
-      </div>
+      </button>
 
       <div class="fc-nav">
         <button id="btn-fc-prev" class="btn btn-secondary">上一题</button>
