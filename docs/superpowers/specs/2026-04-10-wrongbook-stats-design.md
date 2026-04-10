@@ -47,7 +47,7 @@ Value（JSON 对象，题目 id 为键）：
 字段说明：
 - `wrong` — 历史总答错次数
 - `correct` — 历史总答对次数
-- `consecutiveCorrect` — 当前连续答对次数；答对 +1，答错归零；达到 2 视为「已掌握」
+- `consecutiveCorrect` — 当前连续答对次数；答对 +1，答错归零；达到 2 视为「已掌握」。该字段跨会话持久化，不在会话开始时重置。例如上次练习结束时某题 `consecutiveCorrect: 1`，下次进入错题本时该题仍处于「连续答对 1 次」状态。
 
 ### 对外 API
 
@@ -57,6 +57,7 @@ const Storage = {
   getRecord(id),                // 返回单题记录，不存在则返回 { wrong:0, correct:0, consecutiveCorrect:0 }
   getWrongIds(),                // 返回 wrong > 0 且 consecutiveCorrect < 2 的题目 id 数组
   getCategoryStats(),           // 返回 { 通用类: { total, correct, wrong }, ... }
+                                // total = correct + wrong（已答题次数，非该分类题目总数）
   getQuestionStats(category),   // 返回该分类下所有题目的记录数组 [{ question, record }, ...]
   clear()                       // 清空所有记录
 };
@@ -85,7 +86,7 @@ const Storage = {
 - 答题流程与练习模式一致（立即显示对错 + 解析），额外在 feedback 中显示掌握进度：
   - 「连续答对 1 / 2 次」
   - 「已掌握，移出错题本 🎉」（此时该题从当次剩余列表中移除）
-- 答完全部剩余题目后显示总结：「本轮练习完成，移出 X 题，还剩 Y 题未掌握」+ 「继续练习」「返回首页」
+- 答完全部剩余题目后显示总结：「本轮练习完成，移出 X 题，还剩 Y 题未掌握」+ 「继续练习」「返回首页」。其中 Y 为本轮结束后调用 `Storage.getWrongIds().length` 的结果（全局剩余未掌握数），不是本轮未掌握的题数。
 
 ### 数据看板（view-stats）
 
@@ -98,8 +99,8 @@ const Storage = {
   - ≥ 80%：绿色（--brand）
   - 60–79%：橙色（#f57c00）
   - < 60%：红色（--danger）
+  - 未答过题时进度条隐藏，仅显示「尚未作答」文字
 - 错题本中剩余未掌握题数（灰色小标）
-- 未答过题时显示「尚未作答」
 
 点击分类卡片展开题目明细。
 
@@ -115,7 +116,7 @@ const Storage = {
 ### 与现有模式的联动
 
 - 练习模式和考试模式答题时，每次 `submitAnswer()` 后调用 `Storage.recordAnswer(id, isCorrect)`
-- 答题结果不因 storage 写入失败而中断（try/catch 保护，写入失败静默忽略）
+- 答题结果不因 storage 写入失败而中断（try/catch 保护，写入失败时 `console.warn` 输出错误信息，不向用户展示）
 
 ---
 
