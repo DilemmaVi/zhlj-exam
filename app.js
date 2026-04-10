@@ -129,7 +129,7 @@ function stopSpeech() {
 function updateAllSpeakButtons(speaking) {
   [els.speak, els.fcSpeak].forEach((btn) => {
     if (!btn) return;
-    btn.textContent = speaking ? '⏹' : '🔊';
+    btn.textContent = speaking ? '⏹ 停止' : '🔈 朗读';
     btn.setAttribute('aria-label', speaking ? '停止朗读' : '朗读');
   });
 }
