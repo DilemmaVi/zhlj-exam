@@ -7,7 +7,8 @@ const state = {
   selectedOptions: [],
   answered: false,
   correctCount: 0,
-  wrongItems: []
+  wrongItems: [],
+  masteredThisSession: 0
 };
 
 const els = {
@@ -107,6 +108,15 @@ function startExam() {
   renderCurrentQuestion();
 }
 
+function startWrongBook() {
+  const wrongIds = new Set(Storage.getWrongIds());
+  const wrongQuestions = shuffle(questions.filter((q) => wrongIds.has(q.id)));
+  resetSession('wrongbook', wrongQuestions);
+  state.masteredThisSession = 0;
+  showView('quiz');
+  renderCurrentQuestion();
+}
+
 function clearFeedback() {
   els.feedback.className = 'feedback-box hidden';
   els.feedback.textContent = '';
@@ -129,6 +139,8 @@ function renderCurrentQuestion() {
   els.question.textContent = current.question;
   els.options.innerHTML = '';
   clearFeedback();
+  els.wbMasteryHint.className = 'mastery-hint hidden';
+  els.wbMasteryHint.textContent = '';
   els.next.classList.add('hidden');
   els.submit.classList.add('hidden');
   els.confirm.classList.add('hidden');
@@ -234,6 +246,29 @@ function revealPracticeFeedback(userAnswer, question, correct) {
   els.next.classList.remove('hidden');
 }
 
+function revealWrongBookFeedback(userAnswer, question, correct) {
+  markOptions(userAnswer, question.answer);
+  const rec = Storage.getRecord(question.id);
+  const mastered = rec.consecutiveCorrect >= 2;
+
+  els.feedback.className = `feedback-box ${correct ? 'correct' : 'wrong'}`;
+  const correctText = question.answer.map((i) => question.options[i]).join('、');
+  els.feedback.textContent = `${correct ? '回答正确' : '回答错误'}。正确答案：${correctText}。${question.explanation}`;
+
+  if (mastered) {
+    state.masteredThisSession += 1;
+    els.wbMasteryHint.textContent = '已掌握，移出错题本';
+    els.wbMasteryHint.className = 'mastery-hint';
+  } else if (correct) {
+    els.wbMasteryHint.textContent = `连续答对 ${rec.consecutiveCorrect} / 2 次`;
+    els.wbMasteryHint.className = 'mastery-hint';
+  }
+
+  const remaining = state.activeQuestions.length - (mastered ? 1 : 0);
+  els.next.textContent = remaining <= 1 ? '查看结果' : '下一题';
+  els.next.classList.remove('hidden');
+}
+
 function advanceExamFlow() {
   if (state.currentIndex === state.activeQuestions.length - 1) {
     els.confirm.classList.add('hidden');
@@ -262,6 +297,8 @@ function submitAnswer(userAnswer) {
 
   if (state.mode === 'practice') {
     revealPracticeFeedback(userAnswer, question, correct);
+  } else if (state.mode === 'wrongbook') {
+    revealWrongBookFeedback(userAnswer, question, correct);
   } else {
     advanceExamFlow();
   }
@@ -278,6 +315,20 @@ function buildWrongItem(item) {
   p2.textContent = `解析：${item.explanation}`;
   article.append(h4, p1, p2);
   return article;
+}
+
+function renderWrongBookResults() {
+  const remaining = Storage.getWrongCount();
+  els.resultTitle.textContent = '本轮练习完成';
+  els.resultScore.textContent = `移出 ${state.masteredThisSession} 题`;
+  els.resultStatus.textContent = remaining > 0 ? `还剩 ${remaining} 题未掌握` : '错题本已清空！';
+  els.resultStatus.className = remaining > 0 ? 'result-status' : 'result-status pass';
+  els.resultAccuracy.classList.add('hidden');
+  els.retry.textContent = '继续练习';
+  els.retry.classList.remove('hidden');
+  els.wrongList.replaceChildren();
+  updateWrongbookButton();
+  showView('results');
 }
 
 function renderResults() {
@@ -321,7 +372,23 @@ function renderResults() {
 
 els.practice.addEventListener('click', startPractice);
 els.exam.addEventListener('click', startExam);
+els.wrongbook.addEventListener('click', startWrongBook);
 els.next.addEventListener('click', () => {
+  if (state.mode === 'wrongbook') {
+    const rec = Storage.getRecord(state.activeQuestions[state.currentIndex].id);
+    if (rec.consecutiveCorrect >= 2) {
+      state.activeQuestions.splice(state.currentIndex, 1);
+      if (state.activeQuestions.length === 0) {
+        renderWrongBookResults();
+        return;
+      }
+      if (state.currentIndex >= state.activeQuestions.length) {
+        state.currentIndex = state.activeQuestions.length - 1;
+      }
+      renderCurrentQuestion();
+      return;
+    }
+  }
   if (state.currentIndex === state.activeQuestions.length - 1) {
     renderResults();
     return;
@@ -330,7 +397,13 @@ els.next.addEventListener('click', () => {
   renderCurrentQuestion();
 });
 els.submit.addEventListener('click', renderResults);
-els.retry.addEventListener('click', startPractice);
+els.retry.addEventListener('click', () => {
+  if (state.mode === 'wrongbook') {
+    startWrongBook();
+  } else {
+    startPractice();
+  }
+});
 els.homeButton.addEventListener('click', () => {
   updateWrongbookButton();
   showView('home');
@@ -339,9 +412,12 @@ els.homeButton.addEventListener('click', () => {
 if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.startPractice = startPractice;
   window.startExam = startExam;
+  window.startWrongBook = startWrongBook;
   window.renderResults = renderResults;
   window.submitAnswer = submitAnswer;
   window.quizState = state;
+  window.updateWrongbookButton = updateWrongbookButton;
+  window.Storage = Storage;
 }
 
 updateWrongbookButton();
