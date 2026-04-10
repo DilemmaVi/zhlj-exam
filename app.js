@@ -64,6 +64,7 @@ function resetSession(mode, activeQuestions) {
   state.answered = false;
   state.correctCount = 0;
   state.wrongItems = [];
+  state.masteredThisSession = 0;
 }
 
 function updateWrongbookButton() {
@@ -377,7 +378,7 @@ function renderStats() {
   const wrongIds = new Set(Storage.getWrongIds());
   const categories = [...new Set(questions.map((q) => q.category))];
 
-  els.statsCategories.innerHTML = '';
+  els.statsCategories.replaceChildren();
 
   categories.forEach((cat) => {
     const s = catStats[cat] || { total: 0, correct: 0, wrong: 0 };
