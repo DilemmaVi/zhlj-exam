@@ -18,6 +18,8 @@
         <div class="home-actions">
           <button id="btn-practice" class="btn btn-primary">练习模式</button>
           <button id="btn-exam" class="btn btn-secondary">考试模式</button>
+          <button id="btn-wrongbook" class="btn btn-secondary" disabled>错题本（0题）</button>
+          <button id="btn-stats" class="btn btn-secondary">数据看板</button>
         </div>
       </div>
     </section>
@@ -37,6 +39,7 @@
         <h2 id="question-text" class="question-text"></h2>
         <div id="options-container" class="options-container"></div>
         <div id="feedback-box" class="feedback-box hidden"></div>
+        <div id="wb-mastery-hint" class="mastery-hint hidden"></div>
         <div class="quiz-actions">
           <button id="btn-confirm" class="btn btn-primary hidden">确认</button>
           <button id="btn-next" class="btn btn-primary hidden">下一题</button>
@@ -64,9 +67,20 @@
         <button id="btn-home" class="btn btn-primary">返回首页</button>
       </div>
     </section>
+
+    <section id="view-stats" class="view">
+      <div class="stats-card">
+        <div class="stats-header">
+          <h2>数据看板</h2>
+          <button id="btn-stats-home" class="btn btn-secondary">返回首页</button>
+        </div>
+        <div id="stats-categories" class="stats-categories"></div>
+      </div>
+    </section>
   </main>
 
   <script src="questions.js"></script>
+  <script src="storage.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
