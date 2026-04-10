@@ -276,6 +276,7 @@ function startWrongBook() {
 
 function startReview() {
   const dueIds = Storage.getDueIds();
+  if (dueIds.length === 0) return;
   const qMap = new Map(questions.map((q) => [q.id, q]));
   const dueQuestions = dueIds.map((id) => qMap.get(id)).filter(Boolean);
   resetSession('review', dueQuestions);
@@ -458,7 +459,7 @@ function submitAnswer(userAnswer) {
   const question = state.activeQuestions[state.currentIndex];
   const correct = isCorrectAnswer(userAnswer, question);
   state.answered = true;
-  Storage.recordAnswer(question.id, correct);
+  Storage.recordAnswer(question.id, correct); // must be called before recordReview
   if (state.mode === 'review') Storage.recordReview(question.id, correct);
 
   if (correct) {
@@ -668,6 +669,7 @@ els.wrongbook.addEventListener('click', () => tryStartWithResume('wrongbook', st
 els.stats.addEventListener('click', renderStats);
 els.statsHome.addEventListener('click', () => {
   updateWrongbookButton();
+  updateReviewButton();
   showView('home');
 });
 els.next.addEventListener('click', () => {
