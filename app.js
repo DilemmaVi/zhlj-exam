@@ -38,7 +38,12 @@ const els = {
   statsView: document.getElementById('view-stats'),
   wbMasteryHint: document.getElementById('wb-mastery-hint'),
   statsHome: document.getElementById('btn-stats-home'),
-  statsCategories: document.getElementById('stats-categories')
+  statsCategories: document.getElementById('stats-categories'),
+  exit: document.getElementById('btn-exit'),
+  resumePrompt: document.getElementById('resume-prompt'),
+  resumeLabel: document.getElementById('resume-label'),
+  btnResume: document.getElementById('btn-resume'),
+  btnDiscard: document.getElementById('btn-discard')
 };
 
 function showView(name) {
@@ -73,6 +78,51 @@ function updateWrongbookButton() {
   els.wrongbook.disabled = count === 0;
 }
 
+function buildSessionSnapshot() {
+  return {
+    mode: state.mode,
+    questionIds: state.activeQuestions.map((q) => q.id),
+    currentIndex: state.currentIndex,
+    correctCount: state.correctCount,
+    wrongItems: state.wrongItems,
+    answered: state.answered
+  };
+}
+
+function updateExitButtonVisibility() {
+  const canExit = state.mode === 'practice' || state.mode === 'exam';
+  const isLastAndAnswered = state.answered && state.currentIndex === state.activeQuestions.length - 1;
+  els.exit.classList.toggle('hidden', !canExit || isLastAndAnswered);
+}
+
+function checkAndShowResumePrompt() {
+  const saved = Storage.loadSession();
+  if (!saved) { els.resumePrompt.classList.add('hidden'); return; }
+  const modeLabel = saved.mode === 'exam' ? '上次考试' : '上次练习';
+  els.resumeLabel.textContent = `继续${modeLabel}？（已完成 ${saved.currentIndex} / ${saved.questionIds.length} 题）`;
+  els.resumePrompt.classList.remove('hidden');
+}
+
+function hideResumePrompt() {
+  els.resumePrompt.classList.add('hidden');
+}
+
+function resumeSession(saved) {
+  const qMap = new Map(questions.map((q) => [q.id, q]));
+  const activeQuestions = saved.questionIds.map((id) => qMap.get(id)).filter(Boolean);
+  state.mode = saved.mode;
+  state.activeQuestions = activeQuestions;
+  state.currentIndex = saved.currentIndex;
+  state.correctCount = saved.correctCount;
+  state.wrongItems = saved.wrongItems;
+  state.selectedOptions = [];
+  state.answered = false;
+  state.masteredThisSession = 0;
+  hideResumePrompt();
+  showView('quiz');
+  renderCurrentQuestion();
+}
+
 function pickExamQuestions() {
   const quotas = {
     '通用类': 20,
@@ -98,12 +148,16 @@ function pickExamQuestions() {
 }
 
 function startPractice() {
+  Storage.clearSession();
+  hideResumePrompt();
   resetSession('practice', [...questions]);
   showView('quiz');
   renderCurrentQuestion();
 }
 
 function startExam() {
+  Storage.clearSession();
+  hideResumePrompt();
   resetSession('exam', pickExamQuestions());
   showView('quiz');
   renderCurrentQuestion();
@@ -142,6 +196,7 @@ function renderCurrentQuestion() {
   clearFeedback();
   els.wbMasteryHint.className = 'mastery-hint hidden';
   els.wbMasteryHint.textContent = '';
+  updateExitButtonVisibility();
   els.next.classList.add('hidden');
   els.submit.classList.add('hidden');
   els.confirm.classList.add('hidden');
@@ -245,6 +300,7 @@ function revealPracticeFeedback(userAnswer, question, correct) {
     els.next.textContent = '下一题';
   }
   els.next.classList.remove('hidden');
+  updateExitButtonVisibility();
 }
 
 function revealWrongBookFeedback(userAnswer, question, correct) {
@@ -320,6 +376,7 @@ function buildWrongItem(item) {
 }
 
 function renderWrongBookResults() {
+  Storage.clearSession();
   const remaining = Storage.getWrongCount();
   els.resultTitle.textContent = '本轮练习完成';
   els.resultScore.textContent = `移出 ${state.masteredThisSession} 题`;
@@ -334,6 +391,7 @@ function renderWrongBookResults() {
 }
 
 function renderResults() {
+  Storage.clearSession();
   const total = state.activeQuestions.length;
   const accuracy = total === 0 ? 0 : Math.round((state.correctCount / total) * 100);
 
@@ -539,6 +597,26 @@ els.homeButton.addEventListener('click', () => {
   showView('home');
 });
 
+els.exit.addEventListener('click', () => {
+  const snapshot = buildSessionSnapshot();
+  if (state.answered) {
+    snapshot.currentIndex = state.currentIndex + 1;
+    snapshot.answered = false;
+  }
+  Storage.saveSession(snapshot);
+  updateWrongbookButton();
+  showView('home');
+  checkAndShowResumePrompt();
+});
+els.btnResume.addEventListener('click', () => {
+  const saved = Storage.loadSession();
+  if (saved) resumeSession(saved);
+});
+els.btnDiscard.addEventListener('click', () => {
+  Storage.clearSession();
+  hideResumePrompt();
+});
+
 if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.startPractice = startPractice;
   window.startExam = startExam;
@@ -549,7 +627,10 @@ if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.updateWrongbookButton = updateWrongbookButton;
   window.Storage = Storage;
   window.renderStats = renderStats;
+  window.resumeSession = resumeSession;
+  window.checkAndShowResumePrompt = checkAndShowResumePrompt;
 }
 
 updateWrongbookButton();
+checkAndShowResumePrompt();
 
