@@ -225,6 +225,7 @@ function revealPracticeFeedback(userAnswer, question, correct) {
 
 function advanceExamFlow() {
   if (state.currentIndex === state.activeQuestions.length - 1) {
+    els.confirm.classList.add('hidden');
     els.submit.classList.remove('hidden');
     return;
   }
@@ -254,6 +255,19 @@ function submitAnswer(userAnswer) {
   }
 }
 
+function buildWrongItem(item) {
+  const article = document.createElement('article');
+  article.className = 'wrong-item';
+  const h4 = document.createElement('h4');
+  h4.textContent = `${item.category} · ${item.question}`;
+  const p1 = document.createElement('p');
+  p1.textContent = `正确答案：${item.correctAnswer.join('、')}`;
+  const p2 = document.createElement('p');
+  p2.textContent = `解析：${item.explanation}`;
+  article.append(h4, p1, p2);
+  return article;
+}
+
 function renderResults() {
   const total = state.activeQuestions.length;
   const accuracy = total === 0 ? 0 : Math.round((state.correctCount / total) * 100);
@@ -261,29 +275,32 @@ function renderResults() {
   if (state.mode === 'practice') {
     els.resultTitle.textContent = '练习完成';
     els.resultScore.textContent = `答对 ${state.correctCount} / ${total} 题`;
-    els.resultStatus.textContent = '';
+    els.resultStatus.className = 'result-status';
     els.resultAccuracy.textContent = `正确率 ${accuracy}%`;
     els.resultAccuracy.classList.remove('hidden');
     els.retry.classList.remove('hidden');
   } else {
     const score = state.correctCount * 2;
+    const passed = score >= 60;
     els.resultTitle.textContent = '考试结果';
     els.resultScore.textContent = `得分 ${score} / 100`;
-    els.resultStatus.textContent = score >= 60 ? '通过' : '未通过';
+    els.resultStatus.textContent = passed ? '通过' : '未通过';
+    els.resultStatus.className = `result-status ${passed ? 'pass' : 'fail'}`;
     els.resultAccuracy.classList.add('hidden');
     els.retry.classList.add('hidden');
   }
 
   if (state.wrongItems.length === 0) {
-    els.wrongList.innerHTML = '<article class="wrong-item"><h4>本轮没有错题</h4><p>继续保持。</p></article>';
+    const placeholder = document.createElement('article');
+    placeholder.className = 'wrong-item';
+    const h4 = document.createElement('h4');
+    h4.textContent = '本轮没有错题';
+    const p = document.createElement('p');
+    p.textContent = '继续保持。';
+    placeholder.append(h4, p);
+    els.wrongList.replaceChildren(placeholder);
   } else {
-    els.wrongList.innerHTML = state.wrongItems.map((item) => `
-      <article class="wrong-item">
-        <h4>${item.category} · ${item.question}</h4>
-        <p>正确答案：${item.correctAnswer.join('、')}</p>
-        <p>解析：${item.explanation}</p>
-      </article>
-    `).join('');
+    els.wrongList.replaceChildren(...state.wrongItems.map(buildWrongItem));
   }
 
   showView('results');
@@ -303,8 +320,10 @@ els.submit.addEventListener('click', renderResults);
 els.retry.addEventListener('click', startPractice);
 els.homeButton.addEventListener('click', () => showView('home'));
 
-window.startPractice = startPractice;
-window.startExam = startExam;
-window.renderResults = renderResults;
-window.submitAnswer = submitAnswer;
-window.quizState = state;
+if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+  window.startPractice = startPractice;
+  window.startExam = startExam;
+  window.renderResults = renderResults;
+  window.submitAnswer = submitAnswer;
+  window.quizState = state;
+}

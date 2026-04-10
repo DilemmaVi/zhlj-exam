@@ -114,7 +114,6 @@ h1 {
   font-size: 30px;
   line-height: 1.15;
   margin-bottom: 12px;
-  white-space: nowrap;
 }
 
 .subtitle {
@@ -366,3 +365,6 @@ h1 {
     font-size: 18px;
   }
 }
+
+.result-status.pass { color: var(--brand-dark); }
+.result-status.fail { color: var(--danger); }
