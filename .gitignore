@@ -1,7 +1,8 @@
 .DS_Store
 .playwright-mcp/
 .claude/
-docs/
+docs/superpowers/plans/
+docs/superpowers/specs/
 CLAUDE.md
 *.pdf
 *.docx
