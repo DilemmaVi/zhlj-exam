@@ -115,5 +115,44 @@ const Storage = {
     } catch (e) {
       console.warn('Storage.clearSession failed:', e);
     }
+  },
+
+  getDueIds() {
+    if (typeof questions === 'undefined') return [];
+    const data = this._load();
+    const today = new Date().toISOString().slice(0, 10);
+    return questions
+      .filter((q) => {
+        const rec = data[String(q.id)];
+        const nextReview = rec?.nextReview ?? today;
+        return nextReview <= today;
+      })
+      .sort((a, b) => {
+        const ra = data[String(a.id)]?.nextReview ?? today;
+        const rb = data[String(b.id)]?.nextReview ?? today;
+        return ra < rb ? -1 : ra > rb ? 1 : 0;
+      })
+      .map((q) => q.id);
+  },
+
+  recordReview(id, isCorrect) {
+    try {
+      const data = this._load();
+      const key = String(id);
+      const rec = data[key] || { wrong: 0, correct: 0, consecutiveCorrect: 0 };
+      const currentInterval = rec.interval ?? 1;
+      if (isCorrect) {
+        rec.interval = Math.min(currentInterval * 2, 64);
+      } else {
+        rec.interval = 1;
+      }
+      const next = new Date();
+      next.setDate(next.getDate() + rec.interval);
+      rec.nextReview = next.toISOString().slice(0, 10);
+      data[key] = rec;
+      this._save(data);
+    } catch (e) {
+      console.warn('Storage.recordReview failed:', e);
+    }
   }
 };
