@@ -1,0 +1,24 @@
+storage.js
+  892ba593fa3f26b2 15-19,58,75,92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.10",
+  "base_commit_sha": "31770b6d9a0ec2dc688ea8c8d5c22c5a17abb2aa",
+  "prompts": {
+    "892ba593fa3f26b2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "219966f4-e1e2-4aea-951e-48cc12aefd49",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "DilemmaVi",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 2,
+      "accepted_lines": 8,
+      "overriden_lines": 0,
+      "messages_url": "https://gitai.gz.cvte.cn/cas/627ee4e3bb8bf5bc9358801888177e83ad7de3988dd02f0d59890c091094e63b"
+    }
+  }
+}
