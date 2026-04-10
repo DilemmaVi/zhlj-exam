@@ -43,12 +43,24 @@ const els = {
   resumePrompt: document.getElementById('resume-prompt'),
   resumeLabel: document.getElementById('resume-label'),
   btnResume: document.getElementById('btn-resume'),
-  btnDiscard: document.getElementById('btn-discard')
+  btnDiscard: document.getElementById('btn-discard'),
+  flashcard: document.getElementById('btn-flashcard'),
+  fcView: document.getElementById('view-flashcard'),
+  fcProgress: document.getElementById('fc-progress-bar'),
+  fcNumber: document.getElementById('fc-number'),
+  fcCategory: document.getElementById('fc-category'),
+  fcCard: document.getElementById('fc-card'),
+  fcQuestion: document.getElementById('fc-question'),
+  fcAnswer: document.getElementById('fc-answer'),
+  fcExplanation: document.getElementById('fc-explanation'),
+  fcPrev: document.getElementById('btn-fc-prev'),
+  fcNext: document.getElementById('btn-fc-next'),
+  fcExit: document.getElementById('btn-fc-exit')
 };
 
 function showView(name) {
-  [els.home, els.quiz, els.results, els.statsView].forEach((v) => v.classList.remove('active'));
-  const target = name === 'stats' ? els.statsView : els[name];
+  [els.home, els.quiz, els.results, els.statsView, els.fcView].forEach((v) => v.classList.remove('active'));
+  const target = name === 'stats' ? els.statsView : name === 'flashcard' ? els.fcView : els[name];
   target.classList.add('active');
 }
 
@@ -70,6 +82,29 @@ function resetSession(mode, activeQuestions) {
   state.correctCount = 0;
   state.wrongItems = [];
   state.masteredThisSession = 0;
+}
+
+let fcIndex = 0;
+
+function renderFlashcard(index) {
+  const q = questions[index];
+  const total = questions.length;
+  els.fcNumber.textContent = `第 ${index + 1} 题 / 共 ${total} 题`;
+  els.fcProgress.style.width = `${((index + 1) / total) * 100}%`;
+  els.fcCategory.textContent = q.category;
+  els.fcQuestion.textContent = q.question;
+  const answerText = q.answer.map((i) => q.options[i]).join('、');
+  els.fcAnswer.textContent = `正确答案：${answerText}`;
+  els.fcExplanation.textContent = `解析：${q.explanation}`;
+  els.fcCard.classList.remove('flipped');
+  els.fcPrev.disabled = index === 0;
+  els.fcNext.textContent = index === total - 1 ? '完成' : '下一题';
+}
+
+function startFlashcard() {
+  fcIndex = 0;
+  showView('flashcard');
+  renderFlashcard(0);
 }
 
 function updateWrongbookButton() {
@@ -625,6 +660,29 @@ els.btnDiscard.addEventListener('click', () => {
   if (fn) fn();
 });
 
+els.flashcard.addEventListener('click', startFlashcard);
+els.fcCard.addEventListener('click', (e) => {
+  e.preventDefault();
+  els.fcCard.classList.toggle('flipped');
+});
+els.fcPrev.addEventListener('click', () => {
+  if (fcIndex > 0) {
+    fcIndex -= 1;
+    renderFlashcard(fcIndex);
+  }
+});
+els.fcNext.addEventListener('click', () => {
+  if (fcIndex === questions.length - 1) {
+    showView('home');
+  } else {
+    fcIndex += 1;
+    renderFlashcard(fcIndex);
+  }
+});
+els.fcExit.addEventListener('click', () => {
+  showView('home');
+});
+
 if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.startPractice = startPractice;
   window.startExam = startExam;
@@ -637,6 +695,7 @@ if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.renderStats = renderStats;
   window.resumeSession = resumeSession;
   window.tryStartWithResume = tryStartWithResume;
+  window.startFlashcard = startFlashcard;
 }
 
 updateWrongbookButton();
