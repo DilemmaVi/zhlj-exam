@@ -31,14 +31,19 @@ const els = {
   resultAccuracy: document.getElementById('result-accuracy'),
   wrongList: document.getElementById('wrong-list'),
   retry: document.getElementById('btn-retry'),
-  homeButton: document.getElementById('btn-home')
+  homeButton: document.getElementById('btn-home'),
+  wrongbook: document.getElementById('btn-wrongbook'),
+  stats: document.getElementById('btn-stats'),
+  statsView: document.getElementById('view-stats'),
+  wbMasteryHint: document.getElementById('wb-mastery-hint'),
+  statsHome: document.getElementById('btn-stats-home'),
+  statsCategories: document.getElementById('stats-categories')
 };
 
 function showView(name) {
-  els.home.classList.remove('active');
-  els.quiz.classList.remove('active');
-  els.results.classList.remove('active');
-  els[name].classList.add('active');
+  [els.home, els.quiz, els.results, els.statsView].forEach((v) => v.classList.remove('active'));
+  const target = name === 'stats' ? els.statsView : els[name];
+  target.classList.add('active');
 }
 
 function shuffle(items) {
@@ -58,6 +63,12 @@ function resetSession(mode, activeQuestions) {
   state.answered = false;
   state.correctCount = 0;
   state.wrongItems = [];
+}
+
+function updateWrongbookButton() {
+  const count = Storage.getWrongCount();
+  els.wrongbook.textContent = `错题本（${count}题）`;
+  els.wrongbook.disabled = count === 0;
 }
 
 function pickExamQuestions() {
@@ -241,6 +252,7 @@ function submitAnswer(userAnswer) {
   const question = state.activeQuestions[state.currentIndex];
   const correct = isCorrectAnswer(userAnswer, question);
   state.answered = true;
+  Storage.recordAnswer(question.id, correct);
 
   if (correct) {
     state.correctCount += 1;
@@ -303,6 +315,7 @@ function renderResults() {
     els.wrongList.replaceChildren(...state.wrongItems.map(buildWrongItem));
   }
 
+  updateWrongbookButton();
   showView('results');
 }
 
@@ -318,7 +331,10 @@ els.next.addEventListener('click', () => {
 });
 els.submit.addEventListener('click', renderResults);
 els.retry.addEventListener('click', startPractice);
-els.homeButton.addEventListener('click', () => showView('home'));
+els.homeButton.addEventListener('click', () => {
+  updateWrongbookButton();
+  showView('home');
+});
 
 if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.startPractice = startPractice;
@@ -327,3 +343,6 @@ if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.submitAnswer = submitAnswer;
   window.quizState = state;
 }
+
+updateWrongbookButton();
+
