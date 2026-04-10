@@ -92,15 +92,14 @@ let fcIndex = 0;
 
 function renderFlashcard(index) {
   stopSpeech();
-  const q = questions[index];
-  const total = questions.length;
+  const q = flashcards[index];
+  const total = flashcards.length;
   els.fcNumber.textContent = `第 ${index + 1} 题 / 共 ${total} 题`;
   els.fcProgress.style.width = `${((index + 1) / total) * 100}%`;
   els.fcCategory.textContent = q.category;
-  els.fcQuestion.textContent = q.question;
-  const answerText = q.answer.map((i) => q.options[i]).join('、');
-  els.fcAnswer.textContent = `正确答案：${answerText}`;
-  els.fcExplanation.textContent = `解析：${q.explanation}`;
+  els.fcQuestion.textContent = q.front;
+  els.fcAnswer.textContent = q.back;
+  els.fcExplanation.textContent = '';
   els.fcCard.classList.remove('flipped');
   els.fcPrev.disabled = index === 0;
   els.fcNext.textContent = index === total - 1 ? '完成' : '下一题';
@@ -147,14 +146,12 @@ function getQuizSpeakText() {
 }
 
 function getFcSpeakText() {
-  const q = questions[fcIndex];
+  const q = flashcards[fcIndex];
   if (!q) return '';
   if (!els.fcCard.classList.contains('flipped')) {
-    const optionsText = q.options.join('。');
-    return `${q.question}。${optionsText}`;
+    return q.front;
   }
-  const answerText = q.answer.map((i) => q.options[i]).join('、');
-  return `正确答案：${answerText}。${q.explanation}`;
+  return q.back;
 }
 
 function updateWrongbookButton() {
@@ -751,7 +748,7 @@ els.fcPrev.addEventListener('click', () => {
   }
 });
 els.fcNext.addEventListener('click', () => {
-  if (fcIndex === questions.length - 1) {
+  if (fcIndex === flashcards.length - 1) {
     fcIndex = 0;
     showView('home');
   } else {
