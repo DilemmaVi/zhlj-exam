@@ -256,7 +256,6 @@ function revealWrongBookFeedback(userAnswer, question, correct) {
   els.feedback.textContent = `${correct ? '回答正确' : '回答错误'}。正确答案：${correctText}。${question.explanation}`;
 
   if (mastered) {
-    state.masteredThisSession += 1;
     els.wbMasteryHint.textContent = '已掌握，移出错题本';
     els.wbMasteryHint.className = 'mastery-hint';
   } else if (correct) {
@@ -264,8 +263,10 @@ function revealWrongBookFeedback(userAnswer, question, correct) {
     els.wbMasteryHint.className = 'mastery-hint';
   }
 
-  const remaining = state.activeQuestions.length - (mastered ? 1 : 0);
-  els.next.textContent = remaining <= 1 ? '查看结果' : '下一题';
+  const isLast = mastered
+    ? state.activeQuestions.length <= 1
+    : state.currentIndex === state.activeQuestions.length - 1;
+  els.next.textContent = isLast ? '查看结果' : '下一题';
   els.next.classList.remove('hidden');
 }
 
@@ -339,6 +340,7 @@ function renderResults() {
     els.resultTitle.textContent = '练习完成';
     els.resultScore.textContent = `答对 ${state.correctCount} / ${total} 题`;
     els.resultStatus.className = 'result-status';
+    els.resultStatus.textContent = '';
     els.resultAccuracy.textContent = `正确率 ${accuracy}%`;
     els.resultAccuracy.classList.remove('hidden');
     els.retry.classList.remove('hidden');
@@ -377,6 +379,7 @@ els.next.addEventListener('click', () => {
   if (state.mode === 'wrongbook') {
     const rec = Storage.getRecord(state.activeQuestions[state.currentIndex].id);
     if (rec.consecutiveCorrect >= 2) {
+      state.masteredThisSession += 1;
       state.activeQuestions.splice(state.currentIndex, 1);
       if (state.activeQuestions.length === 0) {
         renderWrongBookResults();
@@ -386,6 +389,10 @@ els.next.addEventListener('click', () => {
         state.currentIndex = state.activeQuestions.length - 1;
       }
       renderCurrentQuestion();
+      return;
+    }
+    if (state.currentIndex === state.activeQuestions.length - 1) {
+      renderWrongBookResults();
       return;
     }
   }
