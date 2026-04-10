@@ -15,6 +15,13 @@
         <p class="brand-mark">中辉绿建</p>
         <h1>产品知识答题系统</h1>
         <p class="subtitle">覆盖通用类、快拼箱、折叠箱、拓展箱、太空舱</p>
+        <div id="resume-prompt" class="resume-prompt hidden">
+          <p id="resume-label" class="resume-label"></p>
+          <div class="resume-actions">
+            <button id="btn-resume" class="btn btn-primary">继续</button>
+            <button id="btn-discard" class="btn btn-secondary">重新开始</button>
+          </div>
+        </div>
         <div class="home-actions">
           <button id="btn-practice" class="btn btn-primary">练习模式</button>
           <button id="btn-exam" class="btn btn-secondary">考试模式</button>
@@ -32,6 +39,7 @@
         <div class="meta-row">
           <p id="question-number" class="muted"></p>
           <p id="question-category" class="pill"></p>
+          <button id="btn-exit" class="btn-exit hidden" type="button" aria-label="退出并保存">✕ 退出</button>
         </div>
       </header>
 
