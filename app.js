@@ -116,18 +116,17 @@ function speak(text) {
   stopSpeech();
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = 'zh-CN';
-  utter.onend = () => updateAllSpeakButtons();
-  utter.onerror = () => updateAllSpeakButtons();
+  utter.onend = () => updateAllSpeakButtons(false);
+  utter.onerror = () => updateAllSpeakButtons(false);
   window.speechSynthesis.speak(utter);
-  updateAllSpeakButtons();
+  updateAllSpeakButtons(true);
 }
 
 function stopSpeech() {
   if (window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
-function updateAllSpeakButtons() {
-  const speaking = window.speechSynthesis?.speaking ?? false;
+function updateAllSpeakButtons(speaking) {
   [els.speak, els.fcSpeak].forEach((btn) => {
     if (!btn) return;
     btn.textContent = speaking ? '⏹' : '🔊';
@@ -735,22 +734,16 @@ els.fcExit.addEventListener('click', () => {
   showView('home');
 });
 
-els.speak.addEventListener('click', () => {
+function handleSpeakClick(getTextFn) {
   if (window.speechSynthesis?.speaking) {
     stopSpeech();
-    updateAllSpeakButtons();
+    updateAllSpeakButtons(false);
   } else {
-    speak(getQuizSpeakText());
+    speak(getTextFn());
   }
-});
-els.fcSpeak.addEventListener('click', () => {
-  if (window.speechSynthesis?.speaking) {
-    stopSpeech();
-    updateAllSpeakButtons();
-  } else {
-    speak(getFcSpeakText());
-  }
-});
+}
+els.speak.addEventListener('click', () => handleSpeakClick(getQuizSpeakText));
+els.fcSpeak.addEventListener('click', () => handleSpeakClick(getFcSpeakText));
 
 if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.startPractice = startPractice;
