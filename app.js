@@ -57,7 +57,8 @@ const els = {
   fcNext: document.getElementById('btn-fc-next'),
   fcExit: document.getElementById('btn-fc-exit'),
   speak: document.getElementById('btn-speak'),
-  fcSpeak: document.getElementById('btn-fc-speak')
+  fcSpeak: document.getElementById('btn-fc-speak'),
+  review: document.getElementById('btn-review')
 };
 
 function showView(name) {
@@ -162,6 +163,17 @@ function updateWrongbookButton() {
   els.wrongbook.disabled = count === 0;
 }
 
+function updateReviewButton() {
+  const count = Storage.getDueIds().length;
+  if (count === 0) {
+    els.review.textContent = '复习模式（已全部复习）';
+    els.review.disabled = true;
+  } else {
+    els.review.textContent = `复习模式（${count}题）`;
+    els.review.disabled = false;
+  }
+}
+
 function buildSessionSnapshot() {
   return {
     mode: state.mode,
@@ -174,7 +186,7 @@ function buildSessionSnapshot() {
 }
 
 function updateExitButtonVisibility() {
-  const canExit = state.mode === 'practice' || state.mode === 'exam' || state.mode === 'wrongbook';
+  const canExit = state.mode === 'practice' || state.mode === 'exam' || state.mode === 'wrongbook' || state.mode === 'review';
   const isLastAndAnswered = state.answered && state.currentIndex === state.activeQuestions.length - 1;
   els.exit.classList.toggle('hidden', !canExit || isLastAndAnswered);
 }
@@ -258,6 +270,15 @@ function startWrongBook() {
   const wrongQuestions = shuffle(questions.filter((q) => wrongIds.has(q.id)));
   resetSession('wrongbook', wrongQuestions);
   state.masteredThisSession = 0;
+  showView('quiz');
+  renderCurrentQuestion();
+}
+
+function startReview() {
+  const dueIds = Storage.getDueIds();
+  const qMap = new Map(questions.map((q) => [q.id, q]));
+  const dueQuestions = dueIds.map((id) => qMap.get(id)).filter(Boolean);
+  resetSession('review', dueQuestions);
   showView('quiz');
   renderCurrentQuestion();
 }
@@ -438,6 +459,7 @@ function submitAnswer(userAnswer) {
   const correct = isCorrectAnswer(userAnswer, question);
   state.answered = true;
   Storage.recordAnswer(question.id, correct);
+  if (state.mode === 'review') Storage.recordReview(question.id, correct);
 
   if (correct) {
     state.correctCount += 1;
@@ -445,7 +467,7 @@ function submitAnswer(userAnswer) {
     pushWrongItem(question);
   }
 
-  if (state.mode === 'practice') {
+  if (state.mode === 'practice' || state.mode === 'review') {
     revealPracticeFeedback(userAnswer, question, correct);
   } else if (state.mode === 'wrongbook') {
     revealWrongBookFeedback(userAnswer, question, correct);
@@ -483,18 +505,18 @@ function renderWrongBookResults() {
 }
 
 function renderResults() {
-  Storage.clearSession();
+  if (state.mode !== 'review') Storage.clearSession();
   const total = state.activeQuestions.length;
   const accuracy = total === 0 ? 0 : Math.round((state.correctCount / total) * 100);
 
-  if (state.mode === 'practice') {
-    els.resultTitle.textContent = '练习完成';
+  if (state.mode === 'practice' || state.mode === 'review') {
+    els.resultTitle.textContent = state.mode === 'review' ? '今日复习完成' : '练习完成';
     els.resultScore.textContent = `答对 ${state.correctCount} / ${total} 题`;
     els.resultStatus.className = 'result-status';
     els.resultStatus.textContent = '';
     els.resultAccuracy.textContent = `正确率 ${accuracy}%`;
     els.resultAccuracy.classList.remove('hidden');
-    els.retry.classList.remove('hidden');
+    els.retry.classList.toggle('hidden', state.mode === 'review');
   } else {
     const score = state.correctCount * 2;
     const passed = score >= 60;
@@ -678,6 +700,7 @@ els.next.addEventListener('click', () => {
 });
 els.submit.addEventListener('click', renderResults);
 els.retry.addEventListener('click', () => {
+  if (state.mode === 'review') return;
   if (state.mode === 'wrongbook') {
     startWrongBook();
   } else {
@@ -686,16 +709,19 @@ els.retry.addEventListener('click', () => {
 });
 els.homeButton.addEventListener('click', () => {
   updateWrongbookButton();
+  updateReviewButton();
   showView('home');
 });
 
 els.exit.addEventListener('click', () => {
-  const snapshot = buildSessionSnapshot();
-  if (state.answered) {
-    snapshot.currentIndex = state.currentIndex + 1;
-    snapshot.answered = false;
+  if (state.mode !== 'review') {
+    const snapshot = buildSessionSnapshot();
+    if (state.answered) {
+      snapshot.currentIndex = state.currentIndex + 1;
+      snapshot.answered = false;
+    }
+    Storage.saveSession(snapshot);
   }
-  Storage.saveSession(snapshot);
   updateWrongbookButton();
   showView('home');
 });
@@ -747,6 +773,8 @@ function handleSpeakClick(getTextFn) {
 els.speak.addEventListener('click', () => handleSpeakClick(getQuizSpeakText));
 els.fcSpeak.addEventListener('click', () => handleSpeakClick(getFcSpeakText));
 
+els.review.addEventListener('click', startReview);
+
 if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.startPractice = startPractice;
   window.startExam = startExam;
@@ -760,9 +788,12 @@ if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.resumeSession = resumeSession;
   window.tryStartWithResume = tryStartWithResume;
   window.startFlashcard = startFlashcard;
+  window.startReview = startReview;
+  window.updateReviewButton = updateReviewButton;
 }
 
 updateWrongbookButton();
+updateReviewButton();
 if (!window.speechSynthesis) {
   els.speak.classList.add('hidden');
   els.fcSpeak.classList.add('hidden');
