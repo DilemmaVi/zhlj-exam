@@ -12,7 +12,11 @@ const Storage = {
   },
 
   _save(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.warn('Storage._save failed:', e);
+    }
   },
 
   getRecord(id) {
@@ -51,6 +55,7 @@ const Storage = {
   },
 
   getCategoryStats() {
+    if (typeof questions === 'undefined') return {};
     const data = this._load();
     const stats = {};
     for (const q of questions) {
@@ -67,6 +72,7 @@ const Storage = {
   },
 
   getQuestionStats(category) {
+    if (typeof questions === 'undefined') return [];
     const data = this._load();
     return questions
       .filter((q) => q.category === category)
