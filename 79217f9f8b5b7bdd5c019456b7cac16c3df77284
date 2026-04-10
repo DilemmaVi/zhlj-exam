@@ -1,0 +1,24 @@
+docs/superpowers/specs/2026-04-10-wrongbook-stats-design.md
+  892ba593fa3f26b2 50,60,89,102,119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.10",
+  "base_commit_sha": "79217f9f8b5b7bdd5c019456b7cac16c3df77284",
+  "prompts": {
+    "892ba593fa3f26b2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "219966f4-e1e2-4aea-951e-48cc12aefd49",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "DilemmaVi",
+      "messages": [],
+      "total_additions": 5,
+      "total_deletions": 4,
+      "accepted_lines": 5,
+      "overriden_lines": 0,
+      "messages_url": "https://gitai.gz.cvte.cn/cas/239d496c4cd8e50dc40af2ee48437b73a727787dfe64125cba542b8a2b3b2389"
+    }
+  }
+}
