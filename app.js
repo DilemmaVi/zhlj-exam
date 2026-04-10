@@ -372,9 +372,131 @@ function renderResults() {
   showView('results');
 }
 
+function renderStats() {
+  const catStats = Storage.getCategoryStats();
+  const wrongIds = new Set(Storage.getWrongIds());
+  const categories = [...new Set(questions.map((q) => q.category))];
+
+  els.statsCategories.innerHTML = '';
+
+  categories.forEach((cat) => {
+    const s = catStats[cat] || { total: 0, correct: 0, wrong: 0 };
+    const acc = s.total === 0 ? null : Math.round((s.correct / s.total) * 100);
+    const wrongInCat = questions.filter((q) => q.category === cat && wrongIds.has(q.id)).length;
+
+    const card = document.createElement('div');
+    card.className = 'stat-cat-card';
+
+    const header = document.createElement('div');
+    header.className = 'stat-cat-header';
+
+    const name = document.createElement('span');
+    name.className = 'stat-cat-name';
+    name.textContent = cat;
+
+    const meta = document.createElement('span');
+    meta.className = 'stat-cat-meta';
+    meta.textContent = s.total === 0 ? '尚未作答' : `已答 ${s.total} 次`;
+
+    header.append(name, meta);
+    card.appendChild(header);
+
+    if (acc !== null) {
+      const barTrack = document.createElement('div');
+      barTrack.className = 'stat-acc-bar-track';
+      const barFill = document.createElement('div');
+      const level = acc >= 80 ? 'high' : acc >= 60 ? 'mid' : 'low';
+      barFill.className = `stat-acc-bar-fill ${level}`;
+      barFill.style.width = `${acc}%`;
+      barTrack.appendChild(barFill);
+
+      const label = document.createElement('div');
+      label.className = 'stat-acc-label';
+      label.textContent = `正确率 ${acc}%`;
+
+      card.append(barTrack, label);
+    }
+
+    if (wrongInCat > 0) {
+      const badge = document.createElement('div');
+      badge.className = 'stat-wrong-badge';
+      badge.textContent = `错题本 ${wrongInCat} 题`;
+      card.appendChild(badge);
+    }
+
+    card.addEventListener('click', () => toggleCategoryDetail(card, cat));
+    els.statsCategories.appendChild(card);
+  });
+
+  showView('stats');
+}
+
+function toggleCategoryDetail(card, category) {
+  const existing = card.querySelector('.stat-q-list');
+  if (existing) {
+    existing.remove();
+    card.querySelector('.stat-collapse-btn').remove();
+    return;
+  }
+
+  const qStats = Storage.getQuestionStats(category);
+  const list = document.createElement('div');
+  list.className = 'stat-q-list';
+
+  qStats.forEach(({ question, record }) => {
+    const row = document.createElement('div');
+    row.className = 'stat-q-row';
+
+    const text = document.createElement('span');
+    text.className = 'stat-q-text';
+    text.textContent = question.question.slice(0, 30) + (question.question.length > 30 ? '…' : '');
+
+    const counts = document.createElement('span');
+    counts.className = 'stat-q-counts';
+    counts.textContent = (record.correct === 0 && record.wrong === 0)
+      ? '—'
+      : `✓${record.correct} ✗${record.wrong}`;
+
+    const tag = document.createElement('span');
+    tag.className = 'stat-q-tag';
+    if (record.wrong === 0 && record.correct === 0) {
+      tag.textContent = '未作答';
+      tag.classList.add('untouched');
+    } else if (record.consecutiveCorrect >= 2) {
+      tag.textContent = '已掌握';
+      tag.classList.add('mastered');
+    } else if (record.wrong > 0 && record.consecutiveCorrect < 2) {
+      tag.textContent = '错题本';
+      tag.classList.add('wrong');
+    } else {
+      tag.textContent = '已作答';
+      tag.classList.add('untouched');
+    }
+
+    row.append(text, counts, tag);
+    list.appendChild(row);
+  });
+
+  const collapseBtn = document.createElement('button');
+  collapseBtn.className = 'stat-collapse-btn';
+  collapseBtn.textContent = '收起';
+  collapseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    list.remove();
+    collapseBtn.remove();
+  });
+
+  card.append(list, collapseBtn);
+}
+
 els.practice.addEventListener('click', startPractice);
 els.exam.addEventListener('click', startExam);
 els.wrongbook.addEventListener('click', startWrongBook);
+els.stats.addEventListener('click', renderStats);
+els.statsHome.addEventListener('click', () => {
+  updateWrongbookButton();
+  showView('home');
+});
 els.next.addEventListener('click', () => {
   if (state.mode === 'wrongbook') {
     const rec = Storage.getRecord(state.activeQuestions[state.currentIndex].id);
@@ -425,6 +547,7 @@ if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.quizState = state;
   window.updateWrongbookButton = updateWrongbookButton;
   window.Storage = Storage;
+  window.renderStats = renderStats;
 }
 
 updateWrongbookButton();
