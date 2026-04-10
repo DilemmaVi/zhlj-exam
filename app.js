@@ -55,10 +55,13 @@ const els = {
   fcExplanation: document.getElementById('fc-explanation'),
   fcPrev: document.getElementById('btn-fc-prev'),
   fcNext: document.getElementById('btn-fc-next'),
-  fcExit: document.getElementById('btn-fc-exit')
+  fcExit: document.getElementById('btn-fc-exit'),
+  speak: document.getElementById('btn-speak'),
+  fcSpeak: document.getElementById('btn-fc-speak')
 };
 
 function showView(name) {
+  stopSpeech();
   [els.home, els.quiz, els.results, els.statsView, els.fcView].forEach((v) => v.classList.remove('active'));
   const target = name === 'stats' ? els.statsView : name === 'flashcard' ? els.fcView : els[name];
   target.classList.add('active');
@@ -87,6 +90,7 @@ function resetSession(mode, activeQuestions) {
 let fcIndex = 0;
 
 function renderFlashcard(index) {
+  stopSpeech();
   const q = questions[index];
   const total = questions.length;
   els.fcNumber.textContent = `第 ${index + 1} 题 / 共 ${total} 题`;
@@ -105,6 +109,50 @@ function startFlashcard() {
   fcIndex = 0;
   showView('flashcard');
   renderFlashcard(0);
+}
+
+function speak(text) {
+  if (!window.speechSynthesis || !text) return;
+  stopSpeech();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'zh-CN';
+  utter.onend = () => updateAllSpeakButtons();
+  utter.onerror = () => updateAllSpeakButtons();
+  window.speechSynthesis.speak(utter);
+  updateAllSpeakButtons();
+}
+
+function stopSpeech() {
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
+function updateAllSpeakButtons() {
+  const speaking = window.speechSynthesis?.speaking ?? false;
+  [els.speak, els.fcSpeak].forEach((btn) => {
+    if (!btn) return;
+    btn.textContent = speaking ? '⏹' : '🔊';
+    btn.setAttribute('aria-label', speaking ? '停止朗读' : '朗读');
+  });
+}
+
+function getQuizSpeakText() {
+  const q = state.activeQuestions[state.currentIndex];
+  if (!q) return '';
+  if (state.mode === 'exam' || !state.answered) {
+    return q.question;
+  }
+  const answerText = q.answer.map((i) => q.options[i]).join('、');
+  return `正确答案：${answerText}。${q.explanation}`;
+}
+
+function getFcSpeakText() {
+  const q = questions[fcIndex];
+  if (!q) return '';
+  if (!els.fcCard.classList.contains('flipped')) {
+    return q.question;
+  }
+  const answerText = q.answer.map((i) => q.options[i]).join('、');
+  return `正确答案：${answerText}。${q.explanation}`;
 }
 
 function updateWrongbookButton() {
@@ -226,6 +274,7 @@ function updateProgress() {
 }
 
 function renderCurrentQuestion() {
+  stopSpeech();
   const current = state.activeQuestions[state.currentIndex];
   state.selectedOptions = [];
   state.answered = false;
@@ -663,6 +712,7 @@ els.btnDiscard.addEventListener('click', () => {
 els.flashcard.addEventListener('click', startFlashcard);
 els.fcCard.addEventListener('click', (e) => {
   e.preventDefault();
+  stopSpeech();
   els.fcCard.classList.toggle('flipped');
 });
 els.fcPrev.addEventListener('click', () => {
@@ -685,6 +735,23 @@ els.fcExit.addEventListener('click', () => {
   showView('home');
 });
 
+els.speak.addEventListener('click', () => {
+  if (window.speechSynthesis?.speaking) {
+    stopSpeech();
+    updateAllSpeakButtons();
+  } else {
+    speak(getQuizSpeakText());
+  }
+});
+els.fcSpeak.addEventListener('click', () => {
+  if (window.speechSynthesis?.speaking) {
+    stopSpeech();
+    updateAllSpeakButtons();
+  } else {
+    speak(getFcSpeakText());
+  }
+});
+
 if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.startPractice = startPractice;
   window.startExam = startExam;
@@ -701,4 +768,8 @@ if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
 }
 
 updateWrongbookButton();
+if (!window.speechSynthesis) {
+  els.speak.classList.add('hidden');
+  els.fcSpeak.classList.add('hidden');
+}
 
