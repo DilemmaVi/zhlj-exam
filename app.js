@@ -138,7 +138,8 @@ function getQuizSpeakText() {
   const q = state.activeQuestions[state.currentIndex];
   if (!q) return '';
   if (state.mode === 'exam' || !state.answered) {
-    return q.question;
+    const optionsText = q.options.join('。');
+    return `${q.question}。${optionsText}`;
   }
   const answerText = q.answer.map((i) => q.options[i]).join('、');
   return `正确答案：${answerText}。${q.explanation}`;
@@ -148,7 +149,8 @@ function getFcSpeakText() {
   const q = questions[fcIndex];
   if (!q) return '';
   if (!els.fcCard.classList.contains('flipped')) {
-    return q.question;
+    const optionsText = q.options.join('。');
+    return `${q.question}。${optionsText}`;
   }
   const answerText = q.answer.map((i) => q.options[i]).join('、');
   return `正确答案：${answerText}。${q.explanation}`;
