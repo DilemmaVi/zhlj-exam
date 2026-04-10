@@ -538,20 +538,32 @@ h1 {
   background: rgba(216, 67, 21, 0.12);
 }
 
-/* Resume prompt */
-.resume-prompt {
-  margin-bottom: 20px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: var(--info-soft);
-  border: 1px solid rgba(25, 118, 210, 0.2);
+/* Resume modal */
+.resume-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.resume-modal-box {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: var(--shadow);
 }
 
 .resume-label {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
-  color: var(--info);
-  margin-bottom: 12px;
+  color: var(--text);
+  margin-bottom: 16px;
 }
 
 .resume-actions {

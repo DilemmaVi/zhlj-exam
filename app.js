@@ -95,16 +95,23 @@ function updateExitButtonVisibility() {
   els.exit.classList.toggle('hidden', !canExit || isLastAndAnswered);
 }
 
-function checkAndShowResumePrompt() {
-  const saved = Storage.loadSession();
-  if (!saved) { els.resumePrompt.classList.add('hidden'); return; }
-  const modeLabel = saved.mode === 'exam' ? '上次考试' : saved.mode === 'wrongbook' ? '上次错题练习' : '上次练习';
-  els.resumeLabel.textContent = `继续${modeLabel}？（已完成 ${saved.currentIndex} / ${saved.questionIds.length} 题）`;
-  els.resumePrompt.classList.remove('hidden');
+let _pendingStart = null;
+
+function hideResumeModal() {
+  els.resumePrompt.classList.add('hidden');
+  _pendingStart = null;
 }
 
-function hideResumePrompt() {
-  els.resumePrompt.classList.add('hidden');
+function tryStartWithResume(mode, startFn) {
+  const saved = Storage.loadSession();
+  if (saved && saved.mode === mode) {
+    const modeLabel = mode === 'exam' ? '上次考试' : mode === 'wrongbook' ? '上次错题练习' : '上次练习';
+    els.resumeLabel.textContent = `继续${modeLabel}？（已完成 ${saved.currentIndex} / ${saved.questionIds.length} 题）`;
+    _pendingStart = startFn;
+    els.resumePrompt.classList.remove('hidden');
+    return;
+  }
+  startFn();
 }
 
 function resumeSession(saved) {
@@ -118,7 +125,7 @@ function resumeSession(saved) {
   state.selectedOptions = [];
   state.answered = false;
   state.masteredThisSession = 0;
-  hideResumePrompt();
+  hideResumeModal();
   showView('quiz');
   renderCurrentQuestion();
 }
@@ -149,7 +156,6 @@ function pickExamQuestions() {
 
 function startPractice() {
   Storage.clearSession();
-  hideResumePrompt();
   resetSession('practice', [...questions]);
   showView('quiz');
   renderCurrentQuestion();
@@ -157,7 +163,6 @@ function startPractice() {
 
 function startExam() {
   Storage.clearSession();
-  hideResumePrompt();
   resetSession('exam', pickExamQuestions());
   showView('quiz');
   renderCurrentQuestion();
@@ -165,7 +170,6 @@ function startExam() {
 
 function startWrongBook() {
   Storage.clearSession();
-  hideResumePrompt();
   const wrongIds = new Set(Storage.getWrongIds());
   const wrongQuestions = shuffle(questions.filter((q) => wrongIds.has(q.id)));
   resetSession('wrongbook', wrongQuestions);
@@ -551,9 +555,9 @@ function toggleCategoryDetail(card, category) {
   card.append(list, collapseBtn);
 }
 
-els.practice.addEventListener('click', startPractice);
-els.exam.addEventListener('click', startExam);
-els.wrongbook.addEventListener('click', startWrongBook);
+els.practice.addEventListener('click', () => tryStartWithResume('practice', startPractice));
+els.exam.addEventListener('click', () => tryStartWithResume('exam', startExam));
+els.wrongbook.addEventListener('click', () => tryStartWithResume('wrongbook', startWrongBook));
 els.stats.addEventListener('click', renderStats);
 els.statsHome.addEventListener('click', () => {
   updateWrongbookButton();
@@ -609,7 +613,6 @@ els.exit.addEventListener('click', () => {
   Storage.saveSession(snapshot);
   updateWrongbookButton();
   showView('home');
-  checkAndShowResumePrompt();
 });
 els.btnResume.addEventListener('click', () => {
   const saved = Storage.loadSession();
@@ -617,7 +620,9 @@ els.btnResume.addEventListener('click', () => {
 });
 els.btnDiscard.addEventListener('click', () => {
   Storage.clearSession();
-  hideResumePrompt();
+  const fn = _pendingStart;
+  hideResumeModal();
+  if (fn) fn();
 });
 
 if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
@@ -631,9 +636,8 @@ if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.Storage = Storage;
   window.renderStats = renderStats;
   window.resumeSession = resumeSession;
-  window.checkAndShowResumePrompt = checkAndShowResumePrompt;
+  window.tryStartWithResume = tryStartWithResume;
 }
 
 updateWrongbookButton();
-checkAndShowResumePrompt();
 
