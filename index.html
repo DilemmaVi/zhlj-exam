@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>中辉绿建产品知识答题系统</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section id="view-home" class="view active">
+      <div class="hero-card">
+        <p class="eyebrow">ZHONGHUI QUIZ</p>
+        <p class="brand-mark">中辉绿建</p>
+        <h1>产品知识答题系统</h1>
+        <p class="subtitle">覆盖通用类、快拼箱、折叠箱、拓展箱、太空舱</p>
+        <div class="home-actions">
+          <button id="btn-practice" class="btn btn-primary">练习模式</button>
+          <button id="btn-exam" class="btn btn-secondary">考试模式</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-quiz" class="view">
+      <header class="quiz-header">
+        <div class="progress-track">
+          <div id="progress-bar" class="progress-fill"></div>
+        </div>
+        <div class="meta-row">
+          <p id="question-number" class="muted"></p>
+          <p id="question-category" class="pill"></p>
+        </div>
+      </header>
+
+      <section class="quiz-card">
+        <h2 id="question-text" class="question-text"></h2>
+        <div id="options-container" class="options-container"></div>
+        <div id="feedback-box" class="feedback-box hidden"></div>
+        <div class="quiz-actions">
+          <button id="btn-confirm" class="btn btn-primary hidden">确认</button>
+          <button id="btn-next" class="btn btn-primary hidden">下一题</button>
+          <button id="btn-submit-exam" class="btn btn-primary hidden">提交考试</button>
+        </div>
+      </section>
+    </section>
+
+    <section id="view-results" class="view">
+      <section class="result-card">
+        <p class="eyebrow">RESULT</p>
+        <h2 id="result-title"></h2>
+        <p id="result-score" class="result-score"></p>
+        <p id="result-status" class="result-status"></p>
+        <p id="result-accuracy" class="muted hidden"></p>
+      </section>
+
+      <section class="wrong-section">
+        <h3>错题回顾</h3>
+        <div id="wrong-list" class="wrong-list"></div>
+      </section>
+
+      <div class="result-actions">
+        <button id="btn-retry" class="btn btn-secondary hidden">再练一次</button>
+        <button id="btn-home" class="btn btn-primary">返回首页</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="questions.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

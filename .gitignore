@@ -1,0 +1,8 @@
+.DS_Store
+.playwright-mcp/
+.claude/
+docs/
+CLAUDE.md
+*.pdf
+*.docx
+中辉绿建产品知识学习手册.md
