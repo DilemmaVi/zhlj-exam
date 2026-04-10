@@ -1,0 +1,24 @@
+index.html
+  892ba593fa3f26b2 21-22,42,70-79,83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.10",
+  "base_commit_sha": "1c86227de0ef9a437874d850ae2db327330f0245",
+  "prompts": {
+    "892ba593fa3f26b2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "219966f4-e1e2-4aea-951e-48cc12aefd49",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "DilemmaVi",
+      "messages": [],
+      "total_additions": 14,
+      "total_deletions": 0,
+      "accepted_lines": 14,
+      "overriden_lines": 0,
+      "messages_url": "https://gitai.gz.cvte.cn/cas/8589c2a3ae5e32e46e3c592aa73c39490bfcdb27ea23ae78664f58996e353b10"
+    }
+  }
+}
