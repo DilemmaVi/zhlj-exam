@@ -673,6 +673,7 @@ els.fcPrev.addEventListener('click', () => {
 });
 els.fcNext.addEventListener('click', () => {
   if (fcIndex === questions.length - 1) {
+    fcIndex = 0;
     showView('home');
   } else {
     fcIndex += 1;
@@ -680,6 +681,7 @@ els.fcNext.addEventListener('click', () => {
   }
 });
 els.fcExit.addEventListener('click', () => {
+  fcIndex = 0;
   showView('home');
 });
 
