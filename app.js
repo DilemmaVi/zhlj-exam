@@ -90,7 +90,7 @@ function buildSessionSnapshot() {
 }
 
 function updateExitButtonVisibility() {
-  const canExit = state.mode === 'practice' || state.mode === 'exam';
+  const canExit = state.mode === 'practice' || state.mode === 'exam' || state.mode === 'wrongbook';
   const isLastAndAnswered = state.answered && state.currentIndex === state.activeQuestions.length - 1;
   els.exit.classList.toggle('hidden', !canExit || isLastAndAnswered);
 }
@@ -98,7 +98,7 @@ function updateExitButtonVisibility() {
 function checkAndShowResumePrompt() {
   const saved = Storage.loadSession();
   if (!saved) { els.resumePrompt.classList.add('hidden'); return; }
-  const modeLabel = saved.mode === 'exam' ? '上次考试' : '上次练习';
+  const modeLabel = saved.mode === 'exam' ? '上次考试' : saved.mode === 'wrongbook' ? '上次错题练习' : '上次练习';
   els.resumeLabel.textContent = `继续${modeLabel}？（已完成 ${saved.currentIndex} / ${saved.questionIds.length} 题）`;
   els.resumePrompt.classList.remove('hidden');
 }
@@ -164,6 +164,8 @@ function startExam() {
 }
 
 function startWrongBook() {
+  Storage.clearSession();
+  hideResumePrompt();
   const wrongIds = new Set(Storage.getWrongIds());
   const wrongQuestions = shuffle(questions.filter((q) => wrongIds.has(q.id)));
   resetSession('wrongbook', wrongQuestions);
@@ -325,6 +327,7 @@ function revealWrongBookFeedback(userAnswer, question, correct) {
     : state.currentIndex === state.activeQuestions.length - 1;
   els.next.textContent = isLast ? '查看结果' : '下一题';
   els.next.classList.remove('hidden');
+  updateExitButtonVisibility();
 }
 
 function advanceExamFlow() {
