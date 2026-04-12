@@ -625,6 +625,7 @@ h1 {
   background: var(--card);
   border: 1px solid rgba(255, 255, 255, 0.8);
   box-shadow: var(--shadow);
+  max-height: 100%;
 }
 
 .fc-back {
