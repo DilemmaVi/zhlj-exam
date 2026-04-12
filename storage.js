@@ -164,12 +164,20 @@ const Storage = {
   },
 
   setRoleplayKey(key) {
-    localStorage.setItem(this.RP_KEY, key);
+    try {
+      localStorage.setItem(this.RP_KEY, key);
+    } catch (e) {
+      console.warn('Storage.setRoleplayKey failed:', e);
+    }
   },
 
   clearRoleplayKey() {
-    localStorage.removeItem(this.RP_KEY);
-    localStorage.removeItem(this.RP_BASE_URL);
+    try {
+      localStorage.removeItem(this.RP_KEY);
+      localStorage.removeItem(this.RP_BASE_URL);
+    } catch (e) {
+      console.warn('Storage.clearRoleplayKey failed:', e);
+    }
   },
 
   getRoleplayBaseUrl() {
@@ -177,6 +185,10 @@ const Storage = {
   },
 
   setRoleplayBaseUrl(url) {
-    localStorage.setItem(this.RP_BASE_URL, url);
+    try {
+      localStorage.setItem(this.RP_BASE_URL, url);
+    } catch (e) {
+      console.warn('Storage.setRoleplayBaseUrl failed:', e);
+    }
   }
 };
