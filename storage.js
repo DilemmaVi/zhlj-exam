@@ -154,5 +154,29 @@ const Storage = {
     } catch (e) {
       console.warn('Storage.recordReview failed:', e);
     }
+  },
+
+  RP_KEY: 'zhlj_roleplay_key',
+  RP_BASE_URL: 'zhlj_roleplay_base_url',
+
+  getRoleplayKey() {
+    return localStorage.getItem(this.RP_KEY) || '';
+  },
+
+  setRoleplayKey(key) {
+    localStorage.setItem(this.RP_KEY, key);
+  },
+
+  clearRoleplayKey() {
+    localStorage.removeItem(this.RP_KEY);
+    localStorage.removeItem(this.RP_BASE_URL);
+  },
+
+  getRoleplayBaseUrl() {
+    return localStorage.getItem(this.RP_BASE_URL) || '';
+  },
+
+  setRoleplayBaseUrl(url) {
+    localStorage.setItem(this.RP_BASE_URL, url);
   }
 };
