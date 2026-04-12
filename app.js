@@ -1122,7 +1122,65 @@ els.fcSpeak.addEventListener('click', () => handleSpeakClick(getFcSpeakText));
 
 els.review.addEventListener('click', startReview);
 
-if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+els.roleplay.addEventListener('click', () => ensureApiKey(startRoleplay));
+
+els.rpSend.addEventListener('click', rpSendMessage);
+
+els.rpInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    rpSendMessage();
+  }
+});
+
+els.rpExit.addEventListener('click', () => {
+  showView('home');
+  updateWrongbookButton();
+  updateReviewButton();
+});
+
+els.rpEnd.addEventListener('click', () => {
+  if (roleplaying.turnCount >= 1) {
+    startScoring();
+  }
+});
+
+els.rpAgain.addEventListener('click', () => ensureApiKey(startRoleplay));
+
+els.rpHome.addEventListener('click', () => {
+  showView('home');
+  updateWrongbookButton();
+  updateReviewButton();
+});
+
+els.rpKeyConfirm.addEventListener('click', () => {
+  const baseUrl = els.rpBaseUrlInput.value.trim();
+  const key = els.rpKeyInput.value.trim();
+  if (baseUrl && key) {
+    Storage.setRoleplayBaseUrl(baseUrl);
+    Storage.setRoleplayKey(key);
+    hideKeyModal();
+    if (window._rpKeyCallback) {
+      const cb = window._rpKeyCallback;
+      window._rpKeyCallback = null;
+      cb();
+    }
+  }
+});
+
+els.rpKeyInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    els.rpKeyConfirm.click();
+  }
+});
+
+els.rpClearKey.addEventListener('click', () => {
+  Storage.clearRoleplayKey();
+  showKeyModal();
+});
+
+
   window.startPractice = startPractice;
   window.startExam = startExam;
   window.startWrongBook = startWrongBook;
@@ -1137,6 +1195,11 @@ if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   window.startFlashcard = startFlashcard;
   window.startReview = startReview;
   window.updateReviewButton = updateReviewButton;
+  window.startRoleplay = startRoleplay;
+  window.rpSendMessage = rpSendMessage;
+  window.startScoring = startScoring;
+  window.roleplaying = roleplaying;
+  window.callAI = callAI;
 }
 
 updateWrongbookButton();
