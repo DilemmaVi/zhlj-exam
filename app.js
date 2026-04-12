@@ -130,6 +130,131 @@ function pickRoleplayCards() {
   return picked.slice(0, 6);
 }
 
+async function callAI(messages, systemPrompt) {
+  const apiKey = Storage.getRoleplayKey();
+  const baseUrl = Storage.getRoleplayBaseUrl().replace(/\/$/, '');
+  const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      max_tokens: 1024,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages
+      ]
+    })
+  });
+  if (!response.ok) {
+    throw new Error('请求失败，请检查 API Key、Base URL 或网络');
+  }
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+function showKeyModal() {
+  els.rpBaseUrlInput.value = Storage.getRoleplayBaseUrl();
+  els.rpKeyInput.value = '';
+  els.rpKeyModal.classList.remove('hidden');
+}
+
+function hideKeyModal() {
+  els.rpKeyModal.classList.add('hidden');
+}
+
+function ensureApiKey(callback) {
+  if (Storage.getRoleplayKey() && Storage.getRoleplayBaseUrl()) {
+    callback();
+  } else {
+    showKeyModal();
+    window._rpKeyCallback = callback;
+  }
+}
+
+function appendBubble(type, text) {
+  const div = document.createElement('div');
+  div.className = `rp-bubble rp-bubble-${type}`;
+  div.textContent = text;
+  els.rpChat.appendChild(div);
+  els.rpChat.scrollTop = els.rpChat.scrollHeight;
+  return div;
+}
+
+function appendLoadingBubble() {
+  const div = document.createElement('div');
+  div.className = 'rp-loading';
+  div.id = 'rp-loading-bubble';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  els.rpChat.appendChild(div);
+  els.rpChat.scrollTop = els.rpChat.scrollHeight;
+}
+
+function removeLoadingBubble() {
+  const el = document.getElementById('rp-loading-bubble');
+  if (el) el.remove();
+}
+
+function setRpInputDisabled(disabled) {
+  els.rpInput.disabled = disabled;
+  els.rpSend.disabled = disabled;
+  els.rpEnd.disabled = disabled || roleplaying.turnCount < 1;
+}
+
+function checkPendingScore() {
+  if (roleplaying.pendingScore) {
+    roleplaying.pendingScore = false;
+    startScoring();
+  }
+}
+
+function startRoleplay() {
+  roleplaying.cards = pickRoleplayCards();
+  roleplaying.messages = [];
+  roleplaying.turnCount = 0;
+  roleplaying.fetching = false;
+  roleplaying.keywordMatches = [];
+  roleplaying.scoring = false;
+  roleplaying.score = null;
+  roleplaying.pendingScore = false;
+
+  const cardText = roleplaying.cards.map((c) => `问题：${c.front}\n答案：${c.back}`).join('\n\n');
+  roleplaying.systemPrompt = `你是一位正在考察集装箱模块化建筑产品的外国采购客户。你对以下产品知识感兴趣：\n\n${cardText}\n\n对话规则：\n- 用中文提问，语气自然，像真实采购对话，可以表现出疑虑或追问细节\n- 每次只问一个问题，不要连续抛出多个问题\n- 根据对方回答决定是否追问细节，或转向下一个知识点\n- 当你觉得已经了解足够多（通常 5-8 轮后），用一句自然的结束语收尾（如"好的，我需要再内部讨论一下"），然后在结束语最后加上标记 [CONVERSATION_END]，确保 [CONVERSATION_END] 是你回复的最后内容\n- 不要扮演销售，不要自己主动给出正确答案\n- 第一句话是你作为客户主动开场，介绍你的采购背景和第一个问题`;
+
+  els.rpChat.replaceChildren();
+  els.rpInput.value = '';
+  els.rpEnd.disabled = true;
+  showView('roleplay');
+
+  // OpenAI Chat Completions API requires first message to be user role
+  // Use a fixed opening message to trigger AI's opening statement
+  const openingUserMsg = { role: 'user', content: '你好，请开始介绍吧。' };
+  roleplaying.messages.push(openingUserMsg);
+
+  roleplaying.fetching = true;
+  setRpInputDisabled(true);
+  appendLoadingBubble();
+
+  callAI(roleplaying.messages, roleplaying.systemPrompt)
+    .then((text) => {
+      removeLoadingBubble();
+      roleplaying.messages.push({ role: 'assistant', content: text });
+      appendBubble('ai', text);
+    })
+    .catch(() => {
+      removeLoadingBubble();
+      roleplaying.messages.pop();
+      appendBubble('error', '连接失败，请退出后重试。如问题持续，请检查 API Key 是否有效。');
+    })
+    .finally(() => {
+      roleplaying.fetching = false;
+      setRpInputDisabled(false);
+      checkPendingScore();
+    });
+}
+
 function resetSession(mode, activeQuestions) {
   state.mode = mode;
   state.activeQuestions = activeQuestions;
