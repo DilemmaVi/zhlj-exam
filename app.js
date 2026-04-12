@@ -376,7 +376,8 @@ function renderScore(rawText) {
     return;
   }
 
-  score.total = score.accuracy + score.clarity + score.adaptability;
+  const clampScore = (v) => Math.max(0, Math.min(10, v));
+  score.total = clampScore(score.accuracy) + clampScore(score.clarity) + clampScore(score.adaptability);
   roleplaying.score = score;
 
   const dimensions = [
