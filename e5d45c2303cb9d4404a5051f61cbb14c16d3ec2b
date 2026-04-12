@@ -1,0 +1,23 @@
+flashcards.js
+  892ba593fa3f26b2 3-21,23-35,37-48,50-76,78-93,95-127
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.11",
+  "base_commit_sha": "e5d45c2303cb9d4404a5051f61cbb14c16d3ec2b",
+  "prompts": {
+    "892ba593fa3f26b2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "219966f4-e1e2-4aea-951e-48cc12aefd49",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "DilemmaVi",
+      "messages": [],
+      "total_additions": 120,
+      "total_deletions": 120,
+      "accepted_lines": 120,
+      "overriden_lines": 0
+    }
+  }
+}
