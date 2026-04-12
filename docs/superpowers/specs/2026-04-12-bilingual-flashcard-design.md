@@ -71,7 +71,7 @@
 
 ### 卡片高度
 
-`.fc-face` 的 `min-height: 260px` 可能不够容纳中英双语内容（尤其是答案较长的卡片）。将 `.fc-face` 改为 `min-height: 280px` 并加 `overflow-y: auto`，让内容自动滚动或撑开。
+`.fc-card-inner` 的 `min-height: 260px` 可能不够容纳中英双语内容（尤其是答案较长的卡片）。将 `.fc-card-inner` 改为 `min-height: 280px`，并在 `.fc-front` / `.fc-back`（内层面板，非翻转外壳）加 `overflow-y: auto`，让内容自动撑开或滚动。注意不要在 `.fc-face` 本身加 `overflow-y`，否则会干扰翻转动画。
 
 ## TTS
 
