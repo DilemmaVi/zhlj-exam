@@ -52,7 +52,9 @@ const els = {
   fcCard: document.getElementById('fc-card'),
   fcQuestion: document.getElementById('fc-question'),
   fcAnswer: document.getElementById('fc-answer'),
+  fcAnswerEn: document.getElementById('fc-answer-en'),
   fcExplanation: document.getElementById('fc-explanation'),
+  fcQuestionEn: document.getElementById('fc-question-en'),
   fcPrev: document.getElementById('btn-fc-prev'),
   fcNext: document.getElementById('btn-fc-next'),
   fcExit: document.getElementById('btn-fc-exit'),
@@ -98,7 +100,9 @@ function renderFlashcard(index) {
   els.fcProgress.style.width = `${((index + 1) / total) * 100}%`;
   els.fcCategory.textContent = q.category;
   els.fcQuestion.textContent = q.front;
+  els.fcQuestionEn.textContent = q.frontEn || '';
   els.fcAnswer.textContent = q.back;
+  els.fcAnswerEn.textContent = q.backEn || '';
   els.fcExplanation.textContent = '';
   els.fcCard.classList.remove('flipped');
   els.fcPrev.disabled = index === 0;
