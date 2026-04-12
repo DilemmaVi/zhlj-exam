@@ -759,9 +759,13 @@ h1 {
 
 /* Chat area */
 #view-roleplay {
-  display: flex;
+  display: none;
   flex-direction: column;
   height: calc(100vh - 52px);
+}
+
+#view-roleplay.active {
+  display: flex;
 }
 
 .rp-chat {
