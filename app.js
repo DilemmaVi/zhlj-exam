@@ -133,7 +133,7 @@ function pickRoleplayCards() {
 async function callAI(messages, systemPrompt) {
   const apiKey = Storage.getRoleplayKey();
   const baseUrl = Storage.getRoleplayBaseUrl().replace(/\/$/, '');
-  const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+  const response = await fetch(baseUrl, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
