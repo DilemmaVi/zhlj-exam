@@ -1,0 +1,23 @@
+docs/superpowers/specs/2026-04-12-bilingual-flashcard-design.md
+  892ba593fa3f26b2 74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.11",
+  "base_commit_sha": "7f4f848b4b89fbdd792471e0d1b5a301df31eba2",
+  "prompts": {
+    "892ba593fa3f26b2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "219966f4-e1e2-4aea-951e-48cc12aefd49",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "DilemmaVi",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
