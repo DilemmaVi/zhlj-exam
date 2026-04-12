@@ -140,7 +140,7 @@ async function callAI(messages, systemPrompt) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.4',
       max_tokens: 1024,
       messages: [
         { role: 'system', content: systemPrompt },
