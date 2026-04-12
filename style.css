@@ -602,7 +602,7 @@ h1 {
 .fc-card-inner {
   position: relative;
   width: 100%;
-  min-height: 260px;
+  min-height: 280px;
   transform-style: preserve-3d;
   transition: transform 0.45s ease;
   border-radius: var(--radius);
@@ -632,6 +632,11 @@ h1 {
   background: var(--brand-soft);
 }
 
+.fc-front,
+.fc-back {
+  overflow-y: auto;
+}
+
 .fc-question-text {
   font-size: 20px;
   line-height: 1.5;
@@ -653,6 +658,15 @@ h1 {
   line-height: 1.6;
   color: var(--muted);
   margin: 0;
+  text-align: left;
+}
+
+.fc-en-text {
+  font-size: 14px;
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  color: var(--muted);
+  margin-top: 8px;
+  line-height: 1.5;
   text-align: left;
 }
 
