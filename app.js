@@ -11,6 +11,18 @@ const state = {
   masteredThisSession: 0
 };
 
+const roleplaying = {
+  cards: [],
+  messages: [],
+  systemPrompt: '',
+  turnCount: 0,
+  fetching: false,
+  keywordMatches: [],
+  scoring: false,
+  score: null,
+  pendingScore: false
+};
+
 const els = {
   home: document.getElementById('view-home'),
   quiz: document.getElementById('view-quiz'),
@@ -60,13 +72,35 @@ const els = {
   fcExit: document.getElementById('btn-fc-exit'),
   speak: document.getElementById('btn-speak'),
   fcSpeak: document.getElementById('btn-fc-speak'),
-  review: document.getElementById('btn-review')
+  review: document.getElementById('btn-review'),
+  rpView: document.getElementById('view-roleplay'),
+  rpResult: document.getElementById('view-roleplay-result'),
+  rpChat: document.getElementById('rp-chat'),
+  rpInput: document.getElementById('rp-input'),
+  rpSend: document.getElementById('btn-rp-send'),
+  rpEnd: document.getElementById('btn-rp-end'),
+  rpClearKey: document.getElementById('btn-rp-clear-key'),
+  rpExit: document.getElementById('btn-rp-exit'),
+  rpScores: document.getElementById('rp-scores'),
+  rpTotal: document.getElementById('rp-total'),
+  rpSuggestions: document.getElementById('rp-suggestions'),
+  rpAgain: document.getElementById('btn-rp-again'),
+  rpHome: document.getElementById('btn-rp-home'),
+  rpKeyModal: document.getElementById('rp-key-modal'),
+  rpBaseUrlInput: document.getElementById('rp-base-url-input'),
+  rpKeyInput: document.getElementById('rp-key-input'),
+  rpKeyConfirm: document.getElementById('btn-rp-key-confirm'),
+  roleplay: document.getElementById('btn-roleplay')
 };
 
 function showView(name) {
   stopSpeech();
-  [els.home, els.quiz, els.results, els.statsView, els.fcView].forEach((v) => v.classList.remove('active'));
-  const target = name === 'stats' ? els.statsView : name === 'flashcard' ? els.fcView : els[name];
+  [els.home, els.quiz, els.results, els.statsView, els.fcView, els.rpView, els.rpResult].forEach((v) => v.classList.remove('active'));
+  const target = name === 'stats' ? els.statsView
+    : name === 'flashcard' ? els.fcView
+    : name === 'roleplay' ? els.rpView
+    : name === 'rpResult' ? els.rpResult
+    : els[name];
   target.classList.add('active');
 }
 
@@ -77,6 +111,23 @@ function shuffle(items) {
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
+}
+
+function pickRoleplayCards() {
+  const categories = [...new Set(flashcards.map((c) => c.category))];
+  const picked = [];
+  for (const cat of categories) {
+    const pool = flashcards.filter((c) => c.category === cat);
+    if (pool.length > 0) {
+      picked.push(pool[Math.floor(Math.random() * pool.length)]);
+    }
+  }
+  const usedIds = new Set(picked.map((c) => c.id));
+  const remaining = shuffle(flashcards.filter((c) => !usedIds.has(c.id)));
+  while (picked.length < 6 && remaining.length > 0) {
+    picked.push(remaining.pop());
+  }
+  return picked.slice(0, 6);
 }
 
 function resetSession(mode, activeQuestions) {
