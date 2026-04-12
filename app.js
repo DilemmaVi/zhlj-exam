@@ -255,6 +255,173 @@ function startRoleplay() {
     });
 }
 
+function extractKeywords(text) {
+  if (!text) return new Set();
+  const keywords = new Set();
+  const numUnits = text.match(/\d+[\w\/㎡℃°%]+/g);
+  if (numUnits) numUnits.forEach((k) => keywords.add(k));
+  const cjk = text.match(/[\u4e00-\u9fa5]{4,}/g);
+  if (cjk) cjk.forEach((k) => keywords.add(k));
+  return keywords;
+}
+
+function checkKeywords(userText) {
+  const turn = roleplaying.turnCount;
+  for (const card of roleplaying.cards) {
+    const cardKeywords = extractKeywords(card.back);
+    const matched = [...cardKeywords].some((kw) => userText.includes(kw));
+    roleplaying.keywordMatches.push({ turn, cardId: card.id, matched });
+  }
+}
+
+function rpSendMessage() {
+  const text = els.rpInput.value.trim();
+  if (!text || roleplaying.fetching || roleplaying.scoring) return;
+
+  roleplaying.messages.push({ role: 'user', content: text });
+  appendBubble('user', text);
+  els.rpInput.value = '';
+
+  checkKeywords(text);
+
+  roleplaying.fetching = true;
+  setRpInputDisabled(true);
+  appendLoadingBubble();
+
+  callAI(roleplaying.messages, roleplaying.systemPrompt)
+    .then((aiText) => {
+      removeLoadingBubble();
+
+      const ended = aiText.includes('[CONVERSATION_END]');
+      const displayText = aiText.replaceAll('[CONVERSATION_END]', '').trim();
+
+      roleplaying.messages.push({ role: 'assistant', content: aiText });
+      appendBubble('ai', displayText);
+
+      roleplaying.turnCount += 1;
+      els.rpEnd.disabled = false;
+
+      if (ended) {
+        startScoring();
+      } else if (roleplaying.turnCount >= 12) {
+        startScoring();
+      }
+    })
+    .catch(() => {
+      removeLoadingBubble();
+      roleplaying.messages.pop();
+      appendBubble('error', '发送失败，请重试');
+    })
+    .finally(() => {
+      roleplaying.fetching = false;
+      if (!roleplaying.scoring) {
+        setRpInputDisabled(false);
+      }
+      checkPendingScore();
+    });
+}
+
+function startScoring() {
+  if (roleplaying.scoring) return;
+  if (roleplaying.fetching) {
+    roleplaying.pendingScore = true;
+    return;
+  }
+
+  roleplaying.scoring = true;
+  setRpInputDisabled(true);
+
+  const scoringStatusBubble = appendBubble('ai', '正在生成评分报告...');
+  appendLoadingBubble();
+
+  const keywordSummary = roleplaying.keywordMatches.length > 0
+    ? `\n\n关键词匹配辅助数据：\n${roleplaying.keywordMatches.map((m) => `第${m.turn}轮 卡片${m.cardId}: ${m.matched ? '命中' : '未命中'}`).join('\n')}`
+    : '';
+
+  const scoringMessage = `以上是完整的销售对话记录。现在请切换为评委角色，对销售人员的表现进行评分。\n\n评分维度（每项 0-10 分）：\n1. 产品知识准确性：回答是否与正确知识点一致，有无明显错误\n2. 表达清晰度：回答是否清晰易懂，逻辑是否连贯\n3. 应变能力：面对追问或刁难时是否能灵活补充和化解\n\n只输出以下 JSON，不要输出任何其他文字：\n{"accuracy":<0-10>,"clarity":<0-10>,"adaptability":<0-10>,"total":<三项之和>,"suggestions":[{"issue":"具体问题描述","correct":"正确答案或更好的表达"}]}${keywordSummary}`;
+
+  const allMessages = [...roleplaying.messages, { role: 'user', content: scoringMessage }];
+
+  callAI(allMessages, roleplaying.systemPrompt)
+    .then((rawText) => {
+      removeLoadingBubble();
+      scoringStatusBubble.remove();
+      renderScore(rawText);
+    })
+    .catch(() => {
+      removeLoadingBubble();
+      scoringStatusBubble.remove();
+      appendBubble('error', '评分请求失败，请检查网络后重试');
+      roleplaying.scoring = false;
+      setRpInputDisabled(false);
+    });
+}
+
+function renderScore(rawText) {
+  let score;
+  try {
+    score = JSON.parse(rawText);
+  } catch {
+    const match = rawText.match(/\{[\s\S]*\}/);
+    if (match) {
+      try { score = JSON.parse(match[0]); } catch { score = null; }
+    }
+  }
+
+  if (!score || typeof score.accuracy !== 'number') {
+    els.rpScores.replaceChildren();
+    els.rpTotal.textContent = '';
+    els.rpSuggestions.innerHTML = `<h3>评分解析失败，请查看原始反馈</h3><div class="rp-raw-feedback">${escapeHtml(rawText)}</div>`;
+    showView('rpResult');
+    return;
+  }
+
+  score.total = score.accuracy + score.clarity + score.adaptability;
+  roleplaying.score = score;
+
+  const dimensions = [
+    { key: 'accuracy', label: '产品知识准确性' },
+    { key: 'clarity', label: '表达清晰度' },
+    { key: 'adaptability', label: '应变能力' }
+  ];
+
+  els.rpScores.replaceChildren();
+  dimensions.forEach(({ key, label }) => {
+    const val = Math.max(0, Math.min(10, score[key]));
+    const row = document.createElement('div');
+    row.className = 'rp-score-row';
+    row.innerHTML = `
+      <span class="rp-score-label">${label}</span>
+      <div class="rp-score-track"><div class="rp-score-fill" style="width:${val * 10}%"></div></div>
+      <span class="rp-score-num">${val}/10</span>`;
+    els.rpScores.appendChild(row);
+  });
+
+  els.rpTotal.textContent = `总分 ${score.total} / 30`;
+
+  const suggestionsEl = els.rpSuggestions;
+  suggestionsEl.innerHTML = '';
+  if (score.suggestions && score.suggestions.length > 0) {
+    const h3 = document.createElement('h3');
+    h3.textContent = '改进建议';
+    suggestionsEl.appendChild(h3);
+    score.suggestions.forEach((s) => {
+      const item = document.createElement('div');
+      item.className = 'rp-suggestion-item';
+      item.innerHTML = `<span class="rp-suggestion-issue">${escapeHtml(s.issue || '')}</span><br><span class="rp-suggestion-correct">${escapeHtml(s.correct || '')}</span>`;
+      suggestionsEl.appendChild(item);
+    });
+  }
+
+  showView('rpResult');
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 function resetSession(mode, activeQuestions) {
   state.mode = mode;
   state.activeQuestions = activeQuestions;
