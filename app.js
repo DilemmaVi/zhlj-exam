@@ -13,6 +13,7 @@ const state = {
 
 const roleplaying = {
   cards: [],
+  lang: 'zh',
   messages: [],
   systemPrompt: '',
   turnCount: 0,
@@ -90,7 +91,10 @@ const els = {
   rpBaseUrlInput: document.getElementById('rp-base-url-input'),
   rpKeyInput: document.getElementById('rp-key-input'),
   rpKeyConfirm: document.getElementById('btn-rp-key-confirm'),
-  roleplay: document.getElementById('btn-roleplay')
+  roleplay: document.getElementById('btn-roleplay'),
+  rpLangModal: document.getElementById('rp-lang-modal'),
+  rpLangZh: document.getElementById('btn-rp-lang-zh'),
+  rpLangEn: document.getElementById('btn-rp-lang-en')
 };
 
 function showView(name) {
@@ -231,7 +235,8 @@ function checkPendingScore() {
   }
 }
 
-function startRoleplay() {
+function startRoleplay(lang = 'zh') {
+  roleplaying.lang = lang;
   roleplaying.cards = pickRoleplayCards();
   roleplaying.messages = [];
   roleplaying.turnCount = 0;
@@ -241,17 +246,27 @@ function startRoleplay() {
   roleplaying.score = null;
   roleplaying.pendingScore = false;
 
-  const cardText = roleplaying.cards.map((c) => `问题：${c.front}\n答案：${c.back}`).join('\n\n');
-  roleplaying.systemPrompt = `你是一位正在考察集装箱模块化建筑产品的外国采购客户。你对以下产品知识感兴趣：\n\n${cardText}\n\n对话规则：\n- 用中文提问，语气自然，像真实采购对话，可以表现出疑虑或追问细节\n- 每次只问一个问题，不要连续抛出多个问题\n- 根据对方回答决定是否追问细节，或转向下一个知识点\n- 当你觉得已经了解足够多（通常 5-8 轮后），用一句自然的结束语收尾（如"好的，我需要再内部讨论一下"），然后在结束语最后加上标记 [CONVERSATION_END]，确保 [CONVERSATION_END] 是你回复的最后内容\n- 不要扮演销售，不要自己主动给出正确答案\n- 第一句话是你作为客户主动开场，介绍你的采购背景和第一个问题`;
+  const isEn = lang === 'en';
+  const cardText = roleplaying.cards.map((c) =>
+    isEn
+      ? `Question: ${c.frontEn}\nAnswer: ${c.backEn}`
+      : `问题：${c.front}\n答案：${c.back}`
+  ).join('\n\n');
+
+  if (isEn) {
+    roleplaying.systemPrompt = `You are a foreign purchasing client evaluating modular container building products. You are interested in the following product knowledge:\n\n${cardText}\n\nConversation rules:\n- Ask questions in English, speak naturally like a real procurement conversation, you may express doubts or probe for details\n- Ask only one question at a time, do not fire multiple questions at once\n- Based on the response, decide whether to follow up on details or move to the next topic\n- When you feel you have gathered enough information (typically after 5-8 rounds), close the conversation naturally (e.g. "Alright, I'll need to discuss this internally"), then append the marker [CONVERSATION_END] at the very end of your closing message. Make sure [CONVERSATION_END] is the last part of your reply\n- Do not play the role of the salesperson, do not reveal the correct answers yourself\n- Your first message should be an active opening where you introduce your procurement background and ask your first question`;
+  } else {
+    roleplaying.systemPrompt = `你是一位正在考察集装箱模块化建筑产品的外国采购客户。你对以下产品知识感兴趣：\n\n${cardText}\n\n对话规则：\n- 用中文提问，语气自然，像真实采购对话，可以表现出疑虑或追问细节\n- 每次只问一个问题，不要连续抛出多个问题\n- 根据对方回答决定是否追问细节，或转向下一个知识点\n- 当你觉得已经了解足够多（通常 5-8 轮后），用一句自然的结束语收尾（如"好的，我需要再内部讨论一下"），然后在结束语最后加上标记 [CONVERSATION_END]，确保 [CONVERSATION_END] 是你回复的最后内容\n- 不要扮演销售，不要自己主动给出正确答案\n- 第一句话是你作为客户主动开场，介绍你的采购背景和第一个问题`;
+  }
 
   els.rpChat.replaceChildren();
   els.rpInput.value = '';
+  els.rpInput.placeholder = isEn ? 'Type your response...' : '输入你的回答...';
   els.rpEnd.disabled = true;
   showView('roleplay');
 
-  // OpenAI Chat Completions API requires first message to be user role
-  // Use a fixed opening message to trigger AI's opening statement
-  const openingUserMsg = { role: 'user', content: '你好，请开始介绍吧。' };
+  const openingContent = isEn ? 'Hello, please go ahead and start.' : '你好，请开始介绍吧。';
+  const openingUserMsg = { role: 'user', content: openingContent };
   roleplaying.messages.push(openingUserMsg);
 
   roleplaying.fetching = true;
@@ -352,14 +367,20 @@ function startScoring() {
   roleplaying.scoring = true;
   setRpInputDisabled(true);
 
-  const scoringStatusBubble = appendBubble('ai', '正在生成评分报告...');
+  const isEn = roleplaying.lang === 'en';
+  const scoringStatusText = isEn ? 'Generating score report...' : '正在生成评分报告...';
+  const scoringStatusBubble = appendBubble('ai', scoringStatusText);
   appendLoadingBubble();
 
   const keywordSummary = roleplaying.keywordMatches.length > 0
-    ? `\n\n关键词匹配辅助数据：\n${roleplaying.keywordMatches.map((m) => `第${m.turn}轮 卡片${m.cardId}: ${m.matched ? '命中' : '未命中'}`).join('\n')}`
+    ? isEn
+      ? `\n\nKeyword match auxiliary data:\n${roleplaying.keywordMatches.map((m) => `Round ${m.turn} Card ${m.cardId}: ${m.matched ? 'matched' : 'not matched'}`).join('\n')}`
+      : `\n\n关键词匹配辅助数据：\n${roleplaying.keywordMatches.map((m) => `第${m.turn}轮 卡片${m.cardId}: ${m.matched ? '命中' : '未命中'}`).join('\n')}`
     : '';
 
-  const scoringMessage = `以上是完整的销售对话记录。现在请切换为评委角色，对销售人员的表现进行评分。\n\n评分维度（每项 0-10 分）：\n1. 产品知识准确性：回答是否与正确知识点一致，有无明显错误\n2. 表达清晰度：回答是否清晰易懂，逻辑是否连贯\n3. 应变能力：面对追问或刁难时是否能灵活补充和化解\n\n只输出以下 JSON，不要输出任何其他文字：\n{"accuracy":<0-10>,"clarity":<0-10>,"adaptability":<0-10>,"total":<三项之和>,"suggestions":[{"issue":"具体问题描述","correct":"正确答案或更好的表达"}]}${keywordSummary}`;
+  const scoringMessage = isEn
+    ? `The above is the complete sales conversation. Now switch to the role of a judge and evaluate the salesperson's performance.\n\nScoring dimensions (each 0-10):\n1. Product knowledge accuracy: Are the answers consistent with the correct knowledge points? Any obvious errors?\n2. Clarity of expression: Are the answers clear and easy to understand? Is the logic coherent?\n3. Adaptability: Can the salesperson flexibly supplement and handle tough follow-up questions?\n\nOnly output the following JSON, no other text:\n{"accuracy":<0-10>,"clarity":<0-10>,"adaptability":<0-10>,"total":<sum of three>,"suggestions":[{"issue":"specific problem description","correct":"correct answer or better expression"}]}${keywordSummary}`
+    : `以上是完整的销售对话记录。现在请切换为评委角色，对销售人员的表现进行评分。\n\n评分维度（每项 0-10 分）：\n1. 产品知识准确性：回答是否与正确知识点一致，有无明显错误\n2. 表达清晰度：回答是否清晰易懂，逻辑是否连贯\n3. 应变能力：面对追问或刁难时是否能灵活补充和化解\n\n只输出以下 JSON，不要输出任何其他文字：\n{"accuracy":<0-10>,"clarity":<0-10>,"adaptability":<0-10>,"total":<三项之和>,"suggestions":[{"issue":"具体问题描述","correct":"正确答案或更好的表达"}]}${keywordSummary}`;
 
   const allMessages = [...roleplaying.messages, { role: 'user', content: scoringMessage }];
 
@@ -389,10 +410,13 @@ function renderScore(rawText) {
     }
   }
 
+  const isEn = roleplaying.lang === 'en';
+
   if (!score || typeof score.accuracy !== 'number') {
     els.rpScores.replaceChildren();
     els.rpTotal.textContent = '';
-    els.rpSuggestions.innerHTML = `<h3>评分解析失败，请查看原始反馈</h3><div class="rp-raw-feedback">${escapeHtml(rawText)}</div>`;
+    const fallbackTitle = isEn ? 'Score parsing failed. See raw feedback below.' : '评分解析失败，请查看原始反馈';
+    els.rpSuggestions.innerHTML = `<h3>${fallbackTitle}</h3><div class="rp-raw-feedback">${escapeHtml(rawText)}</div>`;
     showView('rpResult');
     return;
   }
@@ -401,11 +425,17 @@ function renderScore(rawText) {
   score.total = clampScore(score.accuracy) + clampScore(score.clarity) + clampScore(score.adaptability);
   roleplaying.score = score;
 
-  const dimensions = [
-    { key: 'accuracy', label: '产品知识准确性' },
-    { key: 'clarity', label: '表达清晰度' },
-    { key: 'adaptability', label: '应变能力' }
-  ];
+  const dimensions = isEn
+    ? [
+        { key: 'accuracy', label: 'Product Knowledge Accuracy' },
+        { key: 'clarity', label: 'Clarity of Expression' },
+        { key: 'adaptability', label: 'Adaptability' }
+      ]
+    : [
+        { key: 'accuracy', label: '产品知识准确性' },
+        { key: 'clarity', label: '表达清晰度' },
+        { key: 'adaptability', label: '应变能力' }
+      ];
 
   els.rpScores.replaceChildren();
   dimensions.forEach(({ key, label }) => {
@@ -419,13 +449,13 @@ function renderScore(rawText) {
     els.rpScores.appendChild(row);
   });
 
-  els.rpTotal.textContent = `总分 ${score.total} / 30`;
+  els.rpTotal.textContent = isEn ? `Total Score ${score.total} / 30` : `总分 ${score.total} / 30`;
 
   const suggestionsEl = els.rpSuggestions;
   suggestionsEl.innerHTML = '';
   if (score.suggestions && score.suggestions.length > 0) {
     const h3 = document.createElement('h3');
-    h3.textContent = '改进建议';
+    h3.textContent = isEn ? 'Improvement Suggestions' : '改进建议';
     suggestionsEl.appendChild(h3);
     score.suggestions.forEach((s) => {
       const item = document.createElement('div');
@@ -1143,7 +1173,19 @@ els.fcSpeak.addEventListener('click', () => handleSpeakClick(getFcSpeakText));
 
 els.review.addEventListener('click', startReview);
 
-els.roleplay.addEventListener('click', () => ensureApiKey(startRoleplay));
+els.roleplay.addEventListener('click', () => {
+  els.rpLangModal.classList.remove('hidden');
+});
+
+els.rpLangZh.addEventListener('click', () => {
+  els.rpLangModal.classList.add('hidden');
+  ensureApiKey(() => startRoleplay('zh'));
+});
+
+els.rpLangEn.addEventListener('click', () => {
+  els.rpLangModal.classList.add('hidden');
+  ensureApiKey(() => startRoleplay('en'));
+});
 
 els.rpSend.addEventListener('click', rpSendMessage);
 
@@ -1166,7 +1208,9 @@ els.rpEnd.addEventListener('click', () => {
   }
 });
 
-els.rpAgain.addEventListener('click', () => ensureApiKey(startRoleplay));
+els.rpAgain.addEventListener('click', () => {
+  els.rpLangModal.classList.remove('hidden');
+});
 
 els.rpHome.addEventListener('click', () => {
   showView('home');
