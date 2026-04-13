@@ -120,18 +120,18 @@ function shuffle(items) {
 function pickRoleplayCards() {
   const categories = [...new Set(flashcards.map((c) => c.category))];
   const picked = [];
+  // 每个分类各取 2 张，确保全分类覆盖
   for (const cat of categories) {
-    const pool = flashcards.filter((c) => c.category === cat);
-    if (pool.length > 0) {
-      picked.push(pool[Math.floor(Math.random() * pool.length)]);
-    }
+    const pool = shuffle(flashcards.filter((c) => c.category === cat));
+    picked.push(...pool.slice(0, 2));
   }
+  // 若总数仍不足 10，从剩余随机补足
   const usedIds = new Set(picked.map((c) => c.id));
   const remaining = shuffle(flashcards.filter((c) => !usedIds.has(c.id)));
-  while (picked.length < 6 && remaining.length > 0) {
+  while (picked.length < 10 && remaining.length > 0) {
     picked.push(remaining.pop());
   }
-  return picked.slice(0, 6);
+  return shuffle(picked).slice(0, 10);
 }
 
 async function callAI(messages, systemPrompt) {
@@ -254,9 +254,9 @@ function startRoleplay(lang = 'zh') {
   ).join('\n\n');
 
   if (isEn) {
-    roleplaying.systemPrompt = `You are a foreign purchasing client evaluating modular container building products. You are interested in the following product knowledge:\n\n${cardText}\n\nConversation rules:\n- Ask questions in English, speak naturally like a real procurement conversation, you may express doubts or probe for details\n- Ask only one question at a time, do not fire multiple questions at once\n- Based on the response, decide whether to follow up on details or move to the next topic\n- When you feel you have gathered enough information (typically after 5-8 rounds), close the conversation naturally (e.g. "Alright, I'll need to discuss this internally"), then append the marker [CONVERSATION_END] at the very end of your closing message. Make sure [CONVERSATION_END] is the last part of your reply\n- Do not play the role of the salesperson, do not reveal the correct answers yourself\n- Your first message should be an active opening where you introduce your procurement background and ask your first question`;
+    roleplaying.systemPrompt = `You are a foreign purchasing client evaluating modular container building products. You are in contact with Zhonghui Green Building Container Co., Ltd. — a manufacturer and rental provider of container houses with nearly 20 years of global experience, serving over 160 countries and regions, and offering a full range of container building products including Quick-Assembly Containers, Foldable Containers, Expandable Containers, and Space Capsule units.\n\nYou are interested in the following specific product knowledge:\n\n${cardText}\n\nConversation rules:\n- Ask questions in English, speak naturally like a real procurement conversation, you may express doubts or probe for details\n- Ask only one question at a time, do not fire multiple questions at once\n- Based on the response, decide whether to follow up on details or move to the next topic\n- When you feel you have gathered enough information (typically after 5-8 rounds), close the conversation naturally (e.g. "Alright, I'll need to discuss this internally"), then append the marker [CONVERSATION_END] at the very end of your closing message. Make sure [CONVERSATION_END] is the last part of your reply\n- Do not play the role of the salesperson, do not reveal the correct answers yourself\n- Your first message should be an active opening where you introduce your procurement background and ask your first question`;
   } else {
-    roleplaying.systemPrompt = `你是一位正在考察集装箱模块化建筑产品的外国采购客户。你对以下产品知识感兴趣：\n\n${cardText}\n\n对话规则：\n- 用中文提问，语气自然，像真实采购对话，可以表现出疑虑或追问细节\n- 每次只问一个问题，不要连续抛出多个问题\n- 根据对方回答决定是否追问细节，或转向下一个知识点\n- 当你觉得已经了解足够多（通常 5-8 轮后），用一句自然的结束语收尾（如"好的，我需要再内部讨论一下"），然后在结束语最后加上标记 [CONVERSATION_END]，确保 [CONVERSATION_END] 是你回复的最后内容\n- 不要扮演销售，不要自己主动给出正确答案\n- 第一句话是你作为客户主动开场，介绍你的采购背景和第一个问题`;
+    roleplaying.systemPrompt = `你是一位正在考察集装箱模块化建筑产品的外国采购客户。你正在与中辉绿建集装箱有限公司（住人集装箱房租售制造厂家）接洽——该公司拥有近20年全球化经验，业务覆盖160多个国家和地区，产品涵盖快拼箱、折叠箱（Z型/X型）、拓展箱、太空舱等多种集装箱建筑产品。\n\n你对以下具体产品知识感兴趣：\n\n${cardText}\n\n对话规则：\n- 用中文提问，语气自然，像真实采购对话，可以表现出疑虑或追问细节\n- 每次只问一个问题，不要连续抛出多个问题\n- 根据对方回答决定是否追问细节，或转向下一个知识点\n- 当你觉得已经了解足够多（通常 5-8 轮后），用一句自然的结束语收尾（如"好的，我需要再内部讨论一下"），然后在结束语最后加上标记 [CONVERSATION_END]，确保 [CONVERSATION_END] 是你回复的最后��容\n- 不要扮演销售，不要自己主动给出正确答案\n- 第一句话是你作为客户主动开场，介绍你的采购背景和第一个问题`;
   }
 
   els.rpChat.replaceChildren();
