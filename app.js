@@ -142,6 +142,7 @@ async function callAI(messages, systemPrompt) {
     body: JSON.stringify({
       model: 'gpt-5.2',
       max_tokens: 1024,
+      stream: true,
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages
@@ -151,8 +152,28 @@ async function callAI(messages, systemPrompt) {
   if (!response.ok) {
     throw new Error('请求失败，请检查 API Key、Base URL 或网络');
   }
-  const data = await response.json();
-  return data.choices[0].message.content;
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let fullText = '';
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed === 'data: [DONE]') continue;
+      if (!trimmed.startsWith('data: ')) continue;
+      try {
+        const chunk = JSON.parse(trimmed.slice(6));
+        const delta = chunk.choices?.[0]?.delta?.content;
+        if (delta) fullText += delta;
+      } catch { /* skip malformed chunks */ }
+    }
+  }
+  return fullText;
 }
 
 function showKeyModal() {
